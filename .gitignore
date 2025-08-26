@@ -1,0 +1,17 @@
+# Virtual Environment
+venv/
+__pycache__/
+
+# Environment variables
+.env
+
+# Temporary generated files
+certificate.pdf
+certificate_qr.png
+temp.pdf
+temp_qr.png
+
+# IDE and OS specific files
+.idea/
+.vscode/
+*.DS_Store
