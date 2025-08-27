@@ -108,17 +108,32 @@ if selected == options[0]:
         student_email = form.text_input(label="Student's Email")
         verifier_email = form.text_input(label="Verifier's Email")
 
+        # <--- ADD THIS: File uploader for the logo --->
+        uploaded_logo = form.file_uploader("Upload Institute Logo (Optional)", type=["png", "jpg", "jpeg"])
+
         submit = form.form_submit_button("Submit")
 
     
     if submit:
+        # Define default and temporary logo paths
+        default_logo_path = "../assets/logo.jpg"
+        temp_logo_path = None
+
+        if uploaded_logo is not None:
+            # If a logo is uploaded, save it to a temporary file
+            temp_logo_path = os.path.join("temp_logo." + uploaded_logo.name.split('.')[-1])
+            with open(temp_logo_path, "wb") as f:
+                f.write(uploaded_logo.getbuffer())
+            institute_logo_path = temp_logo_path
+        else:
+            # If no logo is uploaded, use the default one
+            institute_logo_path = default_logo_path
 
         # --- KEY CHANGE: Generate certificate_id FIRST ---
         data_to_hash = f"{uid}{candidate_name}{course_name}{org_name}".encode('utf-8')
         certificate_id = hashlib.sha256(data_to_hash).hexdigest()
 
         pdf_file_path = "certificate.pdf"
-        institute_logo_path = "../assets/logo.jpg"
         generate_certificate(pdf_file_path, uid, candidate_name, course_name, org_name, institute_logo_path, certificate_id)
 
         # Upload the PDF to Pinata
