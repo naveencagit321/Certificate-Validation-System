@@ -23,13 +23,4 @@ Traditional certificates are prone to forgery and can be difficult to verify. Th
 
 ## 📁 Project Structure
 
-├── application/      # Contains the Streamlit frontend source code
-├── assets/           # Static assets (images, etc.) for the frontend
-├── contracts/        # Solidity smart contracts
-├── migrations/       # Truffle migration scripts for deployment
-├── .dockerignore     # Specifies files to ignore in Docker builds
-├── .gitignore        # Specifies files for Git to ignore
-├── docker-compose.yml  # Defines and runs the multi-container application
-├── Dockerfile.ganache  # Dockerfile for the local Ganache blockchain
-├── Dockerfile.streamlit # Dockerfile for the Streamlit application
-└── truffle-config.js   # Truffle configuration file
+`application/` — Contains the Streamlit frontend source code | `assets/` — Static assets for the frontend | `contracts/` — Solidity smart contracts | `migrations/` — Truffle migration scripts for deployment | `.dockerignore` — Specifies files to ignore in Docker builds | `.gitignore` — Specifies files for Git to ignore | `docker-compose.yml` — Defines and runs the multi-container application | `Dockerfile.ganache` — Dockerfile for the local Ganache blockchain | `Dockerfile.streamlit` — Dockerfile for the Streamlit application | `truffle-config.js` — Truffle configuration file
