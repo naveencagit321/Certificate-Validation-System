@@ -162,7 +162,7 @@ if selected == options[0]:
 
         # 3. Send the raw signed transaction to Sepolia
         start_time = time.time()
-        tx_hash = w3.eth.send_raw_transaction(signed_txn.rawTransaction)
+        tx_hash = w3.eth.send_raw_transaction(signed_txn.raw_transaction)
 
         # 4. Wait for it to clear on the blockchain
         receipt = w3.eth.wait_for_transaction_receipt(tx_hash)
