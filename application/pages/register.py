@@ -1,6 +1,5 @@
 import streamlit as st
 from db.firebase_app import register
-from streamlit_extras.switch_page_button import switch_page
 from utils.streamlit_utils import hide_icons, hide_sidebar, remove_whitespaces
 
 st.set_page_config(layout="wide", initial_sidebar_state="collapsed")
@@ -8,22 +7,32 @@ hide_icons()
 hide_sidebar()
 remove_whitespaces()
 
-form = st.form("login")
-email = form.text_input("Enter your email")
-password = form.text_input("Enter your password", type="password")
+# --- Initialize session state if it doesn't exist ---
+if "profile" not in st.session_state:
+    st.session_state.profile = "Verifier" # Fallback default
+
+# --- Use a 'with' block for the form ---
+with st.form("register_form"):
+    email = st.text_input("Enter your email")
+    password = st.text_input("Enter your password", type="password")
+    submit = st.form_submit_button("Register")
+
+# Place the login redirect button OUTSIDE the form block
 clicked_login = st.button("Already registered? Click here to login!")
 
 if clicked_login:
-    switch_page("login")
+    # UPDATED PATH
+    st.switch_page("pages/login.py")
     
-submit = form.form_submit_button("Register")
 if submit:
     result = register(email, password)
     if result == "success":
         st.success("Registration successful!")
         if st.session_state.profile == "Institute":
-            switch_page("institute")
+            # UPDATED PATH
+            st.switch_page("pages/institute.py")
         else:
-            switch_page("verifier")
+            # UPDATED PATH
+            st.switch_page("pages/verifier.py")
     else:
         st.error("Registration unsuccessful!")

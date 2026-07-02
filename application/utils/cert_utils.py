@@ -100,4 +100,3 @@ def extract_certificate(pdf_path):
         course_name = lines[-1]
 
         return (uid, candidate_name, course_name, org_name)
-    

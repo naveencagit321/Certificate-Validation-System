@@ -1,7 +1,7 @@
 import streamlit as st
 from PIL import Image
 from utils.streamlit_utils import hide_icons, hide_sidebar, remove_whitespaces
-from streamlit_extras.switch_page_button import switch_page
+
 
 st.set_page_config(layout="wide", initial_sidebar_state="collapsed")
 hide_icons()
@@ -26,7 +26,9 @@ with col2:
 
 if clicked_institute:
     st.session_state.profile = "Institute"
-    switch_page('login')
+    # USE NATIVE METHOD WITH FILE PATH
+    st.switch_page("pages/login.py") 
 elif clicked_verifier:
     st.session_state.profile = "Verifier"
-    switch_page('login')
+    # USE NATIVE METHOD WITH FILE PATH
+    st.switch_page("pages/login.py")
