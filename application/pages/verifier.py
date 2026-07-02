@@ -24,8 +24,21 @@ if "scanned_qr_id" not in st.session_state:
 
 # Free public Google STUN server configuration to resolve connection timeouts over the internet
 RTC_CONFIGURATION = RTCConfiguration(
-    {"iceServers": [{"urls": ["stun:stun.l.google.com:19302"]}]}
+    {
+        "iceServers": [
+            {"urls": ["stun:stun.l.google.com:19302"]},
+            {"urls": ["stun:stun1.l.google.com:19302"]},
+            {"urls": ["stun:stun2.l.google.com:19302"]},
+            # Free reliable TURN servers from Open Relay Project as a fallback tunnel
+            {
+                "urls": ["turn:openrelay.metered.ca:80", "turn:openrelay.metered.ca:443"],
+                "username": "openrelayproject",
+                "credential": "openrelayproject"
+            }
+        ]
+    }
 )
+
 
 def video_frame_callback(frame):
     """
