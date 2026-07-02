@@ -6,9 +6,8 @@ from utils.streamlit_utils import view_certificate
 from connection import contract
 from utils.streamlit_utils import displayPDF, hide_icons, hide_sidebar, remove_whitespaces
 import cv2
-from streamlit_webrtc import webrtc_streamer
+from streamlit_webrtc import webrtc_streamer, RTCConfiguration
 import threading
-import time
 
 st.set_page_config(layout="wide", initial_sidebar_state="collapsed")
 hide_icons()
@@ -17,8 +16,16 @@ remove_whitespaces()
 
 # --- Thread-safe storage for the result ---
 lock = threading.Lock()
-qr_result_container = {"id": None}
 qr_decoder = cv2.QRCodeDetector()
+
+# Use Streamlit Session State to hold the scanned ID securely across thread renders
+if "scanned_qr_id" not in st.session_state:
+    st.session_state.scanned_qr_id = None
+
+# Free public Google STUN server configuration to resolve connection timeouts over the internet
+RTC_CONFIGURATION = RTCConfiguration(
+    {"iceServers": [{"urls": ["stun:stun.l.google.com:19302"]}]}
+)
 
 def video_frame_callback(frame):
     """
@@ -27,10 +34,9 @@ def video_frame_callback(frame):
     img = frame.to_ndarray(format="bgr24")
     data, bbox, straight_qrcode = qr_decoder.detectAndDecode(img)
 
-    with lock:
-        if data:
-            # Get the first QR code found
-            qr_result_container["id"] = data
+    if data:
+        with lock:
+            st.session_state.scanned_qr_id = data
 
     return frame
 
@@ -45,38 +51,34 @@ if selected == options[0]: # Verify using QR Code Scanner
     webrtc_ctx = webrtc_streamer(
         key="qr-scanner",
         video_frame_callback=video_frame_callback,
+        rtc_configuration=RTC_CONFIGURATION, # Added STUN configuration here
         media_stream_constraints={"video": True, "audio": False},
         async_processing=True,
     )
 
-    # Wait for a result and display it
-    if webrtc_ctx.state.playing:
-        while True:
-            with lock:
-                if qr_result_container["id"]:
-                    st.success("QR Code detected!")
-                    st.write("Extracted Certificate ID:")
-                    st.code(qr_result_container["id"], language=None)
+    # Check if a result has been recorded in the session state
+    if st.session_state.scanned_qr_id:
+        st.success("QR Code detected!")
+        st.write("Extracted Certificate ID:")
+        st.code(st.session_state.scanned_qr_id, language=None)
 
-                    try:
-                        # Smart Contract Call
-                        result = contract.functions.isVerified(qr_result_container["id"]).call()
-                        if result:
-                            st.success("Certificate validated successfully!")
-                        else:
-                            # This error means the ID was found, but the certificate is invalid.
-                            st.error("Verification Failed: The certificate record on the blockchain is marked as invalid or has been tampered with.")
-                            st.info("Suggestion: Please ensure you are using the latest version of the certificate. If the issue persists, contact the issuing organization.")
+        try:
+            # Smart Contract Call
+            result = contract.functions.isVerified(st.session_state.scanned_qr_id).call()
+            if result:
+                st.success("Certificate validated successfully!")
+            else:
+                st.error("Verification Failed: The certificate record on the blockchain is marked as invalid or has been tampered with.")
+                st.info("Suggestion: Please ensure you are using the latest version of the certificate. If the issue persists, contact the issuing organization.")
 
-                    except Exception as e:
-                        # This error means the ID from the QR code was not found on the blockchain.
-                        st.error("Error: The data from this QR code does not correspond to a valid certificate on the blockchain.")
-                        st.info("Suggestion: Please scan the official QR code located on the top-right corner of the certificate PDF.")
+        except Exception as e:
+            st.error("Error: The data from this QR code does not correspond to a valid certificate on the blockchain.")
+            st.info("Suggestion: Please scan the official QR code located on the top-right corner of the certificate PDF.")
 
-                    # Reset for next scan and stop the loop
-                    qr_result_container["id"] = None
-                    break
-            time.sleep(0.5)
+        # Add a clear button to let the user clear the state and scan another certificate
+        if st.button("Scan Another Certificate"):
+            st.session_state.scanned_qr_id = None
+            st.rerun()
 
 elif selected == options[1]:
     uploaded_file = st.file_uploader("Upload the PDF version of the certificate")
