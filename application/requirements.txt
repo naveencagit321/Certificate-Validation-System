@@ -8,3 +8,4 @@ reportlab
 pyrebase4
 qrcode
 opencv-python-headless
+streamlit-webrtc
