@@ -1,8 +1,9 @@
-pdfplumber==0.10.3
-Pillow==10.1.0
-web3==5.24.0
+streamlit
+web3>=6.0.0
 python-dotenv
 requests
-streamlit
-setuptools
+Pillow>=10.1.0
+pdfplumber>=0.10.3
 reportlab
+pyrebase4
+qrcode

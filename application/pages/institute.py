@@ -150,7 +150,7 @@ if selected == options[0]:
             course_name, 
             org_name, 
             ipfs_hash
-        ).buildTransaction({
+        ).build_transaction({
             'chainId': 11155111,                  # Sepolia's official Chain ID
             'gas': 300000,
             'gasPrice': w3.eth.gas_price,
