@@ -13,12 +13,16 @@ remove_whitespaces()
 st.markdown(
     """
     <style>
-        /* Force hidden status on the sidebar toggle button completely */
+        /* Force the core application container to start at the absolute top margin */
+        .block-container {
+            padding-top: 0.5rem !important;
+            padding-bottom: 0rem !important;
+        }
+        /* Completely wipe out the sidebar expander arrow */
         [data-testid="stSidebarCollapseButton"] {
             display: none !important;
             visibility: hidden !important;
         }
-        /* Completely eliminate any residual sidebar spacing structural elements */
         section[data-testid="stSidebar"] {
             display: none !important;
             width: 0px !important;
@@ -28,11 +32,10 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-# ─── FIXED TOP-LEFT INLINE NAVIGATION HEADER ───
 if st.button("Home", key="nav_home_verifier_btn"):
     st.switch_page("app.py")
 
-st.markdown("<h2 style='margin-top: 10px;'>Verifier Verification Portal</h2>", unsafe_allow_html=True)
+st.markdown("<h2 style='margin-top: 5px;'>Verifier Verification Portal</h2>", unsafe_allow_html=True)
 st.write("---")
 
 if "scanned_qr_id" not in st.session_state:

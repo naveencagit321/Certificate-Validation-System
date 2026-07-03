@@ -27,16 +27,19 @@ hide_icons()
 hide_sidebar()
 remove_whitespaces()
 
-# ─── 🌟 CSS INJECTION TO COMPLETELY ELIMINATE SIDEBAR BUTTONS & PANES ───
 st.markdown(
     """
     <style>
-        /* Force hidden status on the sidebar toggle button completely */
+        /* Force the core application container to start at the absolute top margin */
+        .block-container {
+            padding-top: 0.5rem !important;
+            padding-bottom: 0rem !important;
+        }
+        /* Completely wipe out the sidebar expander arrow */
         [data-testid="stSidebarCollapseButton"] {
             display: none !important;
             visibility: hidden !important;
         }
-        /* Completely eliminate any residual sidebar spacing structural elements */
         section[data-testid="stSidebar"] {
             display: none !important;
             width: 0px !important;
@@ -51,8 +54,7 @@ st.markdown(
 if st.button("Home", key="nav_home_btn"):
     st.switch_page("app.py")
 
-# Clean, professional header spacing
-st.markdown("<h2 style='margin-top: 10px;'>Institute Dashboard</h2>", unsafe_allow_html=True)
+st.markdown("<h2 style='margin-top: 5px;'>Institute Dashboard</h2>", unsafe_allow_html=True)
 st.write("---")
 
 load_dotenv()

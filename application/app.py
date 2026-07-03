@@ -9,6 +9,23 @@ hide_icons()
 hide_sidebar()
 remove_whitespaces()
 
+st.markdown(
+    """
+    <style>
+        /* Permanently destroy the sidebar toggle button layout element */
+        [data-testid="stSidebarCollapseButton"] {
+            display: none !important;
+            visibility: hidden !important;
+        }
+        section[data-testid="stSidebar"] {
+            display: none !important;
+            width: 0px !important;
+        }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
+
 
 st.title("Certificate Validation System")
 st.write("")
