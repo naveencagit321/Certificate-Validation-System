@@ -120,7 +120,7 @@ if selected == options[0]:
     # 1. Base directory setups for dynamic absolute path evaluation
     
         current_dir = Path(__file__).parent.resolve()
-        root_dir = current_dir.parent
+        root_dir = current_dir.parent.parent
         
         default_logo_path = str(root_dir / "assets" / "logo.jpg")
         temp_logo_path = None
