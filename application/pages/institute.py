@@ -172,8 +172,8 @@ if selected == options[0]:
             ).build_transaction({
                 'chainId': 11155111,
                 'gas': 400000,
-                'gasPrice': w3.eth.gas_price,
-                'nonce': w3.eth.get_transaction_count(w3.eth.account.from_key(os.getenv("PRIVATE_KEY")).address),
+                'gasPrice': int(w3.eth.gas_price * 1.15),
+                'nonce': w3.eth.get_transaction_count(w3.eth.account.from_key(os.getenv("PRIVATE_KEY")).address, 'pending'),
             })
 
             # Cryptographic payload verification and broadcasting
