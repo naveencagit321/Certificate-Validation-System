@@ -116,7 +116,8 @@ if selected == options[0]:
 
     
     if submit:
-       # Define default and temporary logo paths using a secure absolute root structure
+       
+    # 1. Base directory setups for dynamic absolute path evaluation
     
         current_dir = Path(__file__).parent.resolve()
         root_dir = current_dir.parent
@@ -124,121 +125,74 @@ if selected == options[0]:
         default_logo_path = str(root_dir / "assets" / "logo.jpg")
         temp_logo_path = None
 
+        # Handle image file upload check
         if uploaded_logo is not None:
-            # Save uploaded file safely into the application directory structure
             extension = uploaded_logo.name.split('.')[-1]
             temp_filename = f"temp_logo.{extension}"
-            temp_logo_path = str(current_dir / temp_filename)
+            temp_logo_path = str(root_dir / temp_filename)
             
             with open(temp_logo_path, "wb") as f:
                 f.write(uploaded_logo.getbuffer())
             institute_logo_path = temp_logo_path
         else:
-            # Use the dynamic absolute path instead of the hardcoded relative version
             institute_logo_path = default_logo_path
 
-            # --- KEY CHANGE: Generate certificate_id FIRST ---
-            data_to_hash = f"{uid}{candidate_name}{course_name}{org_name}".encode('utf-8')
-            certificate_id = hashlib.sha256(data_to_hash).hexdigest()
-
-            pdf_file_path = "certificate.pdf"
-    
-            # Generate the certificate PDF safely passing the verified paths
-            generate_certificate(
-                pdf_file_path, 
-                uid, 
-                candidate_name, 
-                course_name, 
-                org_name, 
-                institute_logo_path, 
-                certificate_id
-            )
+        # 2. Cryptographic computation (Guaranteed to build certificate_id variable)
+        data_to_hash = f"{uid}{candidate_name}{course_name}{org_name}".encode('utf-8')
+        certificate_id = hashlib.sha256(data_to_hash).hexdigest()
         
+        pdf_file_path = "certificate.pdf"
         
-
-        # Smart Contract Call
-    # 1. Build the transaction dictionary
-        contract_txn = contract.functions.generateCertificate(
-            certificate_id, 
+        # 3. Document PDF compilation layer
+        generate_certificate(
+            pdf_file_path, 
             uid, 
             candidate_name, 
             course_name, 
             org_name, 
-            ipfs_hash
-        ).build_transaction({
-            'chainId': 11155111,                  # Sepolia's official Chain ID
-            'gas': 300000,
-            'gasPrice': w3.eth.gas_price,
-            'nonce': w3.eth.get_transaction_count(w3.eth.account.from_key(os.getenv("PRIVATE_KEY")).address),
-        })
+            institute_logo_path, 
+            certificate_id
+        )
 
-        # 2. Sign the transaction securely using your private key from the .env file
-        signed_txn = w3.eth.account.sign_transaction(contract_txn, private_key=os.getenv("PRIVATE_KEY"))
+        # 4. Storage distribution
+        ipfs_hash = upload_to_pinata(pdf_file_path, api_key, api_secret)
 
-        # 3. Send the raw signed transaction to Sepolia
-        start_time = time.time()
-        tx_hash = w3.eth.send_raw_transaction(signed_txn.raw_transaction)
-
-        # 4. Wait for it to clear on the blockchain
-        receipt = w3.eth.wait_for_transaction_receipt(tx_hash)
-        end_time = time.time()
-
-        # --- Send the email after generating the PDF ---
-        if student_email or verifier_email:
-            recipients = [email for email in [student_email, verifier_email] if email]
-            email_subject = f"Certificate of Completion for {candidate_name}"
-            email_body = (
-                f"Dear {candidate_name},\n\n"
-                f"Please find attached your certificate for completing the course: {course_name}.\n\n"
-                f"Your unique Certificate ID is: {certificate_id}\n\n"
-                "This can be verified on our portal.\n\n"
-                "Best Regards,\n"
-                f"{org_name}"
-            )
-            send_email_with_attachment(recipients, email_subject, email_body, pdf_file_path)
-
-        
-        # -----------------------------------------------
-
-        # Clean up the generated PDF file after sending
-        os.remove(pdf_file_path)
-        with col2:
-
-            st.success("Certificate successfully generated!")
-            st.write("Certificate ID:")
-            st.code(certificate_id, language=None)
-
-            # ... (rest of the results display code remains the same)
-            st.write("Certificate QR Code:")
-            qr_img = qrcode.make(certificate_id)
-            qr_img.save("certificate_qr.png")
-            st.image("certificate_qr.png", width=200)
-            with open("certificate_qr.png", "rb") as file:
-                st.download_button(
-                    label="Download QR Code",
-                    data=file,
-                    file_name="certificate_qr.png",
-                    mime="image/png"
-                )
-            os.remove("certificate_qr.png")
-
-            # Display gas and execution time
-            execution_time = end_time - start_time
-            gas_used = receipt['gasUsed']
-
-            df = pd.DataFrame({
-                "Particulars": ["Execution Time (seconds)", "Gas Used"],
-                "Value": [f"{execution_time:.4f}", gas_used]
+        # 5. Smart Contract Execution Pipeline
+        try:
+            # Build transaction sequence using uniform variable bounds
+            contract_txn = contract.functions.generateCertificate(
+                certificate_id,
+                uid,
+                candidate_name,
+                course_name,
+                org_name,
+                ipfs_hash
+            ).build_transaction({
+                'chainId': 11155111,
+                'gas': 400000,
+                'gasPrice': w3.eth.gas_price,
+                'nonce': w3.eth.get_transaction_count(w3.eth.account.from_key(os.getenv("PRIVATE_KEY")).address),
             })
 
-            st.dataframe(df, hide_index=True)
+            # Cryptographic payload verification and broadcasting
+            signed_txn = w3.eth.account.sign_transaction(contract_txn, private_key=os.getenv("PRIVATE_KEY"))
+            tx_hash = w3.eth.send_raw_transaction(signed_txn.raw_transaction)
+            
+            # Await testnet node settlement confirmation
+            receipt = w3.eth.wait_for_transaction_receipt(tx_hash)
+            
+            if receipt.status == 1:
+                st.success("🎉 Certificate successfully anchored to the Ethereum Blockchain!")
+                st.write(f"**Transaction Hash:** `{tx_hash.hex()}`")
+                st.write(f"**IPFS IPFS CID Reference:** `{ipfs_hash}`")
+            else:
+                st.error("Transaction failed during execution on Sepolia.")
 
-else:
-    form = st.form("View-Certificate")
-    certificate_id = form.text_input("Enter the Certificate ID")
-    submit = form.form_submit_button("Submit")
-    if submit:
-        try:
-            view_certificate(certificate_id)
         except Exception as e:
-            st.error("Invalid Certificate ID!")
+            st.error(f"Blockchain Verification Error: {str(e)}")
+
+        # Cleanup temporary local instances safely
+        if temp_logo_path and os.path.exists(temp_logo_path):
+            os.remove(temp_logo_path)
+        if os.path.exists(pdf_file_path):
+            os.remove(pdf_file_path)
