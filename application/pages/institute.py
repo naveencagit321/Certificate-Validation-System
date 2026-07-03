@@ -9,7 +9,7 @@ import hashlib
 from utils.cert_utils import generate_certificate
 from utils.streamlit_utils import view_certificate
 from connection import contract, w3
-from utils.streamlit_utils import hide_icons, hide_sidebar, remove_whitespaces
+from utils.streamlit_utils import hide_icons, hide_sidebar, remove_whitespaces, displayPDF
 import qrcode
 from PIL import Image
 from pathlib import Path
