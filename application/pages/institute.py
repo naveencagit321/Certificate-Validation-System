@@ -179,7 +179,7 @@ if selected == options[0]:
             tx_hash = w3.eth.send_raw_transaction(signed_txn.raw_transaction)
             
             # Await testnet node settlement confirmation
-            receipt = w3.eth.wait_for_transaction_receipt(tx_hash)
+            receipt = w3.eth.wait_for_transaction_receipt(tx_hash, timeout=300, poll_latency=2)
             
             if receipt.status == 1:
                 st.success("🎉 Certificate successfully anchored to the Ethereum Blockchain!")
