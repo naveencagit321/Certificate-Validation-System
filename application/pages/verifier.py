@@ -58,20 +58,31 @@ options = ("Verify using QR Code Scanner","Verify Certificate using PDF","View/V
 selected = st.selectbox("", options, label_visibility="hidden")
 
 if selected == options[0]: # Verify using QR Code Scanner
-    st.subheader("Live QR Code Scanner")
-    st.write("Place the QR code in front of your camera.")
+    st.subheader("Instant QR Code Scanner")
+    st.write("Take a quick photo of the QR code using your device camera.")
 
-    webrtc_ctx = webrtc_streamer(
-        key="qr-scanner",
-        video_frame_callback=video_frame_callback,
-        rtc_configuration=RTC_CONFIGURATION, # Added STUN configuration here
-        media_stream_constraints={"video": True, "audio": False},
-        async_processing=True,
-    )
+    # 🌟 INSTANT FIX: Uses native camera API instead of firewall-blocked WebRTC streams
+    img_file = st.camera_input("Scan Certificate QR", label_visibility="collapsed")
 
-    # Check if a result has been recorded in the session state
+    if img_file is not None:
+        import numpy as np
+        
+        # Read the image bytes directly into OpenCV
+        file_bytes = np.frombuffer(img_file.getvalue(), np.uint8)
+        img_np = cv2.imdecode(file_bytes, cv2.IMREAD_COLOR)
+        
+        # Decode the image instantly
+        data, bbox, straight_qrcode = qr_decoder.detectAndDecode(img_np)
+
+        if data:
+            st.session_state.scanned_qr_id = data
+            st.success("🎯 QR Code captured successfully!")
+        else:
+            st.error("Could not read a valid QR code from this picture.")
+            st.info("Suggestion: Hold the camera steady, ensure the QR code is centered, and take another photo.")
+
+    # Smart Contract Validation Logic
     if st.session_state.scanned_qr_id:
-        st.success("QR Code detected!")
         st.write("Extracted Certificate ID:")
         st.code(st.session_state.scanned_qr_id, language=None)
 
@@ -79,16 +90,13 @@ if selected == options[0]: # Verify using QR Code Scanner
             # Smart Contract Call
             result = contract.functions.isVerified(st.session_state.scanned_qr_id).call()
             if result:
-                st.success("Certificate validated successfully!")
+                st.success("✅ Certificate validated successfully against the Blockchain record!")
             else:
-                st.error("Verification Failed: The certificate record on the blockchain is marked as invalid or has been tampered with.")
-                st.info("Suggestion: Please ensure you are using the latest version of the certificate. If the issue persists, contact the issuing organization.")
-
+                st.error("Verification Failed: This record on the blockchain is marked as invalid.")
+                
         except Exception as e:
-            st.error("Error: The data from this QR code does not correspond to a valid certificate on the blockchain.")
-            st.info("Suggestion: Please scan the official QR code located on the top-right corner of the certificate PDF.")
+            st.error("Error: The data from this QR code does not correspond to a valid entry on the blockchain.")
 
-        # Add a clear button to let the user clear the state and scan another certificate
         if st.button("Scan Another Certificate"):
             st.session_state.scanned_qr_id = None
             st.rerun()
