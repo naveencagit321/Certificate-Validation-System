@@ -26,7 +26,15 @@ st.set_page_config(layout="wide", initial_sidebar_state="collapsed")
 hide_icons()
 hide_sidebar()
 remove_whitespaces()
-
+# ─── VISUAL NAVIGATION HEADER ───
+nav_col1, nav_col2 = st.columns([8, 2])
+with nav_col1:
+    st.title("🛡️ Institute Dashboard")
+with nav_col2:
+    # Looks for app.py at the parent root folder level
+    if st.button("⬅️ Back to Home", use_container_width=True):
+        st.switch_page("app.py") 
+st.write("---")
 load_dotenv()
 
 api_key = os.getenv("PINATA_API_KEY")
@@ -116,6 +124,12 @@ if selected == options[0]:
 
         # <--- ADD THIS: File uploader for the logo --->
         uploaded_logo = form.file_uploader("Upload Institute Logo (Optional)", type=["png", "jpg", "jpeg"])
+
+        # ─── MOBILE IMAGE FIX: Prevent giant stretching by adding a thumbnail container right inside the form ───
+        if uploaded_logo is not None:
+            with form.container():
+                preview_image = Image.open(uploaded_logo)
+                st.image(preview_image, caption="Logo Preview", width=150)
 
         submit = form.form_submit_button("Submit")
 
