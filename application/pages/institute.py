@@ -12,6 +12,7 @@ from connection import contract, w3
 from utils.streamlit_utils import hide_icons, hide_sidebar, remove_whitespaces
 import qrcode
 from PIL import Image
+from pathlib import Path
 
 # --- Add these imports for sending email ---
 import smtplib
@@ -115,29 +116,36 @@ if selected == options[0]:
 
     
     if submit:
-        # Define default and temporary logo paths
-        default_logo_path = "../assets/logo.jpg"
+       # Define default and temporary logo paths using a secure absolute root structure
+    
+        current_dir = Path(__file__).parent.resolve()
+        root_dir = current_dir.parent
+        
+        default_logo_path = str(root_dir / "assets" / "logo.jpg")
         temp_logo_path = None
 
         if uploaded_logo is not None:
-            # If a logo is uploaded, save it to a temporary file
-            temp_logo_path = os.path.join("temp_logo." + uploaded_logo.name.split('.')[-1])
+            # Save uploaded file safely into the application directory structure
+            extension = uploaded_logo.name.split('.')[-1]
+            temp_filename = f"temp_logo.{extension}"
+            temp_logo_path = str(current_dir / temp_filename)
+            
             with open(temp_logo_path, "wb") as f:
                 f.write(uploaded_logo.getbuffer())
             institute_logo_path = temp_logo_path
         else:
-            # If no logo is uploaded, use the default one
+            # Use the dynamic absolute path instead of the hardcoded relative version
             institute_logo_path = default_logo_path
 
-        # --- KEY CHANGE: Generate certificate_id FIRST ---
-        data_to_hash = f"{uid}{candidate_name}{course_name}{org_name}".encode('utf-8')
-        certificate_id = hashlib.sha256(data_to_hash).hexdigest()
+            # --- KEY CHANGE: Generate certificate_id FIRST ---
+            data_to_hash = f"{uid}{candidate_name}{course_name}{org_name}".encode('utf-8')
+            certificate_id = hashlib.sha256(data_to_hash).hexdigest()
 
-        pdf_file_path = "certificate.pdf"
-        generate_certificate(pdf_file_path, uid, candidate_name, course_name, org_name, institute_logo_path, certificate_id)
+            pdf_file_path = "certificate.pdf"
+            generate_certificate(pdf_file_path, uid, candidate_name, course_name, org_name, institute_logo_path, certificate_id)
 
-        # Upload the PDF to Pinata
-        ipfs_hash = upload_to_pinata(pdf_file_path, api_key, api_secret)
+            # Upload the PDF to Pinata
+            ipfs_hash = upload_to_pinata(pdf_file_path, api_key, api_secret)
         
         
 
