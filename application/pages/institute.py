@@ -27,19 +27,36 @@ hide_icons()
 hide_sidebar()
 remove_whitespaces()
 
-# ─── FIXED LEFT-ALIGNED NAVIGATION HEADER ───
-nav_col1, nav_col2, nav_col3 = st.columns([1.5, 6.5, 2])
+# ─── 🌟 CSS INJECTION TO COMPLETELY ELIMINATE SIDEBAR BUTTONS & PANES ───
+st.markdown(
+    """
+    <style>
+        /* Force hidden status on the sidebar toggle button completely */
+        [data-testid="stSidebarCollapseButton"] {
+            display: none !important;
+            visibility: hidden !important;
+        }
+        /* Completely eliminate any residual sidebar spacing structural elements */
+        section[data-testid="stSidebar"] {
+            display: none !important;
+            width: 0px !important;
+        }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
 
-with nav_col1:
-    if st.button("Home", use_container_width=True):
-        st.switch_page("app.py")
+# ─── FIXED TOP-LEFT INLINE NAVIGATION HEADER ───
+# Removing columns handles the sizing anomaly. We draw the button natively matching the word length.
+if st.button("Home", key="nav_home_btn"):
+    st.switch_page("app.py")
 
-with nav_col2:
-    st.markdown("<h2 style='margin-top: -10px;'>Institute Dashboard</h2>", unsafe_allow_html=True)
-
+# Clean, professional header spacing
+st.markdown("<h2 style='margin-top: 10px;'>Institute Dashboard</h2>", unsafe_allow_html=True)
 st.write("---")
 
 load_dotenv()
+# ... (Keep the rest of your core processing logic completely identical below) ...
 
 api_key = os.getenv("PINATA_API_KEY")
 api_secret = os.getenv("PINATA_API_SECRET")

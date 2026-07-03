@@ -10,16 +10,29 @@ hide_icons()
 hide_sidebar()
 remove_whitespaces()
 
-# ─── FIXED LEFT-ALIGNED NAVIGATION HEADER ───
-nav_col1, nav_col2, nav_col3 = st.columns([1.5, 6.5, 2])
+st.markdown(
+    """
+    <style>
+        /* Force hidden status on the sidebar toggle button completely */
+        [data-testid="stSidebarCollapseButton"] {
+            display: none !important;
+            visibility: hidden !important;
+        }
+        /* Completely eliminate any residual sidebar spacing structural elements */
+        section[data-testid="stSidebar"] {
+            display: none !important;
+            width: 0px !important;
+        }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
 
-with nav_col1:
-    if st.button("Home", use_container_width=True):
-        st.switch_page("app.py")
+# ─── FIXED TOP-LEFT INLINE NAVIGATION HEADER ───
+if st.button("Home", key="nav_home_verifier_btn"):
+    st.switch_page("app.py")
 
-with nav_col2:
-    st.markdown("<h2 style='margin-top: -10px;'>🔍 Verifier Verification Portal</h2>", unsafe_allow_html=True)
-
+st.markdown("<h2 style='margin-top: 10px;'>Verifier Verification Portal</h2>", unsafe_allow_html=True)
 st.write("---")
 
 if "scanned_qr_id" not in st.session_state:
