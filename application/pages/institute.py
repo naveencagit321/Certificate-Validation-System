@@ -142,10 +142,17 @@ if selected == options[0]:
             certificate_id = hashlib.sha256(data_to_hash).hexdigest()
 
             pdf_file_path = "certificate.pdf"
-            generate_certificate(pdf_file_path, uid, candidate_name, course_name, org_name, institute_logo_path, certificate_id)
-
-            # Upload the PDF to Pinata
-            ipfs_hash = upload_to_pinata(pdf_file_path, api_key, api_secret)
+    
+            # Generate the certificate PDF safely passing the verified paths
+            generate_certificate(
+                pdf_file_path, 
+                uid, 
+                candidate_name, 
+                course_name, 
+                org_name, 
+                institute_logo_path, 
+                certificate_id
+            )
         
         
 
