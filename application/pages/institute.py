@@ -64,10 +64,16 @@ def send_email_with_attachment(recipient_emails, subject, body, file_path):
     sender_email = os.getenv("SENDER_EMAIL")
     sender_password = os.getenv("SENDER_PASSWORD")
 
+    # Filter out empty string fields if any
+    recipients = [email.strip() for email in recipient_emails if email and email.strip()]
+    if not recipients:
+        st.warning("No valid email addresses provided for notification.")
+        return
+
     # Create the email
     msg = MIMEMultipart()
     msg['From'] = sender_email
-    msg['To'] = ", ".join(recipient_emails)
+    msg['To'] = ", ".join(recipients)
     msg['Subject'] = subject
     msg.attach(MIMEText(body, 'plain'))
 
@@ -84,9 +90,9 @@ def send_email_with_attachment(recipient_emails, subject, body, file_path):
         server = smtplib.SMTP('smtp.gmail.com', 587)
         server.starttls()
         server.login(sender_email, sender_password)
-        server.sendmail(sender_email, recipient_emails, msg.as_string())
+        server.sendmail(sender_email, recipients, msg.as_string())
         server.quit()
-        st.success(f"Certificate successfully emailed to {', '.join(recipient_emails)}")
+        st.success(f"📨 Certificate successfully emailed to {', '.join(recipients)}")
     except Exception as e:
         st.error(f"Failed to send email. Error: {e}")
 # ----------------------------------------------------
@@ -97,7 +103,6 @@ selected = st.selectbox("", options, label_visibility="hidden")
 if selected == options[0]:
     col1, col2 = st.columns(2)
     with col1:
-
         form = st.form("Generate-Certificate")
         form.subheader("Generate Certificate")
         uid = form.text_input(label="UID")
@@ -114,11 +119,8 @@ if selected == options[0]:
 
         submit = form.form_submit_button("Submit")
 
-    
     if submit:
-       
-    # 1. Base directory setups for dynamic absolute path evaluation
-    
+        # 1. Base directory setups for dynamic absolute path evaluation
         current_dir = Path(__file__).parent.resolve()
         root_dir = current_dir.parent.parent
         
@@ -184,7 +186,28 @@ if selected == options[0]:
             if receipt.status == 1:
                 st.success("🎉 Certificate successfully anchored to the Ethereum Blockchain!")
                 st.write(f"**Transaction Hash:** `{tx_hash.hex()}`")
-                st.write(f"**IPFS IPFS CID Reference:** `{ipfs_hash}`")
+                st.write(f"**IPFS CID Reference:** `{ipfs_hash}`")
+                
+                # ─── RESTORED VISUAL DASHBOARD & EMAIL COMPONENTS ───
+                st.write("---")
+                st.subheader("Generated Certificate Preview")
+                
+                # 1. Display PDF preview on dashboard if it exists
+                if os.path.exists(pdf_file_path):
+                    displayPDF(pdf_file_path)
+                
+                # 2. Dispatch email to Student and Verifier
+                email_list = []
+                if student_email:
+                    email_list.append(student_email)
+                if verifier_email:
+                    email_list.append(verifier_email)
+                
+                if email_list and os.path.exists(pdf_file_path):
+                    email_subject = f"Digital Certificate Issued: {course_name}"
+                    email_body = f"Hello,\n\nA new digital certificate has been verified and securely anchored to the blockchain for {candidate_name}.\n\nCertificate ID: {certificate_id}\nIPFS Hash: {ipfs_hash}\n\nPlease find the official signed PDF document attached to this email."
+                    send_email_with_attachment(email_list, email_subject, email_body, pdf_file_path)
+                # ───────────────────────────────────────────────────
             else:
                 st.error("Transaction failed during execution on Sepolia.")
 
