@@ -13,27 +13,45 @@ st.markdown("<h4 style='text-align: center; color: #a1a1a1; margin-bottom: 40px;
 st.write("---")
 
 # ─── INTERACTIVE ROLE SELECTION GRID ───
-# Creates balanced padding columns to align the interface beautifully on all screen resolutions
-pad_l, col1, spacer, col2, pad_r = st.columns([1, 4, 1, 4, 1])
+# Balanced layout grid structure
+pad_l, col1, spacer, col2, pad_r = st.columns([1.5, 3.5, 1, 3.5, 1.5])
 
 with col1:
     st.markdown("<div style='text-align: center;'>", unsafe_allow_html=True)
-    # Renders the institution graphic interface component
-    st.image("assets/institute_logo.png", width=220)
+    
+    # 🌟 RESPONSIVE IMAGE: width: 80% dynamically scales down on mobile, max-width keeps it perfect on PC
+    st.markdown(
+        r'<a href="/institute" target="_self">'
+        r'<img src="app/static/assets/institute_logo.png" style="width: 80%; max-width: 200px; border-radius: 10px; cursor: pointer;">'
+        r'</a>', 
+        unsafe_allow_html=True
+    )
     st.markdown("</div>", unsafe_allow_html=True)
     
-    st.write("") # Spacing margin
-    if st.button("Institute Dashboard", use_container_width=True, key="go_to_inst"):
-        # Switches context directly to the public certificate generation workspace
-        st.switch_page("pages/institute.py")
+    st.write("") 
+    st.markdown(
+        r'<div style="text-align: center; margin-top: 10px;">'
+        r'<a href="/institute" target="_self" style="text-decoration: none; display: inline-block; background-color: #262730; color: white; padding: 8px 16px; border-radius: 8px; border: 1px solid #464855; font-size: 14px;">🏫 Institute Dashboard</a>'
+        r'</div>',
+        unsafe_allow_html=True
+    )
 
 with col2:
     st.markdown("<div style='text-align: center;'>", unsafe_allow_html=True)
-    # Renders the verification company graphic interface component
-    st.image("assets/company_logo.jpg", width=220)
+    
+    # 🌟 RESPONSIVE IMAGE: Dynamic scale configuration
+    st.markdown(
+        r'<a href="/verifier" target="_self">'
+        r'<img src="app/static/assets/company_logo.jpg" style="width: 80%; max-width: 200px; border-radius: 10px; cursor: pointer;">'
+        r'</a>', 
+        unsafe_allow_html=True
+    )
     st.markdown("</div>", unsafe_allow_html=True)
     
-    st.write("") # Spacing margin
-    if st.button("Verifier Portal", use_container_width=True, key="go_to_ver"):
-        # Switches context directly to the public camera scanner workspace
-        st.switch_page("pages/verifier.py")
+    st.write("") 
+    st.markdown(
+        r'<div style="text-align: center; margin-top: 10px;">'
+        r'<a href="/verifier" target="_self" style="text-decoration: none; display: inline-block; background-color: #262730; color: white; padding: 8px 16px; border-radius: 8px; border: 1px solid #464855; font-size: 14px;">🔍 Verifier Portal</a>'
+        r'</div>',
+        unsafe_allow_html=True
+    )
