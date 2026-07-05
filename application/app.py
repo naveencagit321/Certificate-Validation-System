@@ -22,7 +22,7 @@ with col1:
     # 🌟 RESPONSIVE IMAGE: width: 80% dynamically scales down on mobile, max-width keeps it perfect on PC
     st.markdown(
         r'<a href="/institute" target="_self">'
-        r'<img src="app/static/institute_logo.png" style="width: 80%; max-width: 200px; border-radius: 10px; cursor: pointer;">'
+        r'<img src="static/institute_logo.png" style="width: 80%; max-width: 200px; border-radius: 10px; cursor: pointer;">'
         r'</a>', 
         unsafe_allow_html=True
     )
@@ -42,7 +42,7 @@ with col2:
     # 🌟 RESPONSIVE IMAGE: Dynamic scale configuration
     st.markdown(
         r'<a href="/verifier" target="_self">'
-        r'<img src="app/static/company_logo.jpg" style="width: 80%; max-width: 200px; border-radius: 10px; cursor: pointer;">'
+        r'<img src="static/company_logo.jpg" style="width: 80%; max-width: 200px; border-radius: 10px; cursor: pointer;">'
         r'</a>', 
         unsafe_allow_html=True
     )
