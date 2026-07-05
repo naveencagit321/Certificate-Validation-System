@@ -5,20 +5,16 @@ import numpy as np
 from connection import contract
 from utils.streamlit_utils import hide_icons, hide_sidebar, remove_whitespaces
 
+# ─── STREAMLIT PAGE CONFIGURATION ───
 st.set_page_config(layout="wide", initial_sidebar_state="collapsed")
 hide_icons()
 hide_sidebar()
 remove_whitespaces()
 
+# ─── ELIMINATE SIDEBAR INFRASTRUCTURE ───
 st.markdown(
     """
     <style>
-        /* Force the core application container to start at the absolute top margin */
-        .block-container {
-            padding-top: 0.5rem !important;
-            padding-bottom: 0rem !important;
-        }
-        /* Completely wipe out the sidebar expander arrow */
         [data-testid="stSidebarCollapseButton"] {
             display: none !important;
             visibility: hidden !important;
@@ -32,49 +28,104 @@ st.markdown(
     unsafe_allow_html=True
 )
 
+# ─── TOP-LEFT INLINE NAVIGATION HEADER ───
 if st.button("Home", key="nav_home_verifier_btn"):
     st.switch_page("app.py")
 
-st.markdown("<h2 style='margin-top: 5px;'>Verifier Verification Portal</h2>", unsafe_allow_html=True)
+st.markdown("<h2 style='margin-top: 10px;'>🔍 Verifier Verification Portal</h2>", unsafe_allow_html=True)
 st.write("---")
 
-if "scanned_qr_id" not in st.session_state:
-    st.session_state.scanned_qr_id = None
+# Initialize default session tracking for selector interface state
+if "verification_mode" not in st.session_state:
+    st.session_state.verification_mode = "QR Code Scanner"
 
-qr_decoder = cv2.QRCodeDetector()
+# ─── SIDE-BY-SIDE CLICKABLE NAVIGATION INTERFACE ───
+# Creates three symmetric layout grids for the utility navigation buttons
+btn_col1, btn_col2, btn_col3 = st.columns(3)
 
-# ─── NO SELECTOR MENU ─── Jumps straight to the scanner layout:
-cam_pad_l, cam_core, cam_pad_r = st.columns([1, 4, 1])
-
-with cam_core:
-    st.subheader("Instant QR Code Scanner")
-    st.write("Take a quick photo of the QR code using your device camera.")
-    img_file = st.camera_input("Scan Certificate QR", label_visibility="collapsed")
-
-if img_file is not None:
-    file_bytes = np.frombuffer(img_file.getvalue(), np.uint8)
-    img_np = cv2.imdecode(file_bytes, cv2.IMREAD_COLOR)
-    data, bbox, straight_qrcode = qr_decoder.detectAndDecode(img_np)
-
-    if data:
-        st.session_state.scanned_qr_id = data
-        st.success("QR Code captured successfully!")
-    else:
-        st.error("Could not read a valid QR code from this picture.")
-
-if st.session_state.scanned_qr_id:
-    st.write("Extracted Certificate ID:")
-    st.code(st.session_state.scanned_qr_id, language=None)
-
-    try:
-        result = contract.functions.isVerified(st.session_state.scanned_qr_id).call()
-        if result:
-            st.success("Certificate validated successfully against the Blockchain record!")
-        else:
-            st.error("Verification Failed: This record on the blockchain is marked as invalid.")
-    except Exception as e:
-        st.error("Error: The data from this QR code does not correspond to a valid entry on the blockchain.")
-
-    if st.button("Scan Another Certificate"):
-        st.session_state.scanned_qr_id = None
+with btn_col1:
+    # Highlight the active option using primary button configurations
+    if st.button(
+        "QR Code Scanner", 
+        use_container_width=True, 
+        type="primary" if st.session_state.verification_mode == "QR Code Scanner" else "secondary"
+    ):
+        st.session_state.verification_mode = "QR Code Scanner"
         st.rerun()
+
+with btn_col2:
+    if st.button(
+        "Upload Certificate PDF", 
+        use_container_width=True, 
+        type="primary" if st.session_state.verification_mode == "Upload PDF" else "secondary"
+    ):
+        st.session_state.verification_mode = "Upload PDF"
+        st.rerun()
+
+with btn_col3:
+    if st.button(
+        "Enter Certificate ID", 
+        use_container_width=True, 
+        type="primary" if st.session_state.verification_mode == "Manual ID Lookup" else "secondary"
+    ):
+        st.session_state.verification_mode = "Manual ID Lookup"
+        st.rerun()
+
+st.write("") # Margin spacing padding
+
+# ─── MODE CONDITION PIPELINE MODULES ───
+
+# 🛑 MODULE 1: NATIVE QR CODE SCANNER WORKSPACE
+if st.session_state.verification_mode == "QR Code Scanner":
+    st.subheader("QR Code Scanner Workspace")
+    camera_input = st.camera_input("Position the certificate QR code target clearly inside the viewport frame")
+    
+    if camera_input:
+        bytes_data = camera_input.getvalue()
+        cv2_img = cv2.imdecode(np.frombuffer(bytes_data, np.uint8), cv2.IMREAD_COLOR)
+        detector = cv2.QRCodeDetector()
+        data, bbox, straight_qrcode = detector.detectAndDecode(cv2_img)
+        
+        if data:
+            st.info(f"QR Target Data Decoded: {data}")
+            # Insert your existing smart contract verification lookup pipeline here
+        else:
+            st.error("No valid QR code layout detected in image. Please realign the target and try again.")
+
+# 🛑 MODULE 2: FILE UPLOAD SEGMENTATION WORKSPACE
+elif st.session_state.verification_mode == "Upload PDF":
+    st.subheader("Upload Certificate PDF File Workspace")
+    uploaded_file = st.file_uploader("Drop the digital certificate PDF file here for evaluation", type=["pdf"])
+    
+    if uploaded_file is not None:
+        st.success("File uploaded successfully!")
+        # 💡 Verification logic placeholder: Extract text/metadata or match transaction parameters
+        # Example tracking: hash_val = hashlib.sha256(uploaded_file.read()).hexdigest()
+
+# 🛑 MODULE 3: MANUAL REGISTRY TRANSACTION LOOKUP WORKSPACE
+elif st.session_state.verification_mode == "Manual ID Lookup":
+    st.subheader("Manual Certificate ID Identification Workspace")
+    cert_id = st.text_input("Enter the unique Certificate Registration Identification Number (UID):")
+    
+    if st.button("Validate ID Signature", use_container_width=True):
+        if cert_id.strip():
+            with st.spinner("Querying Ethereum Blockchain smart contract ledger..."):
+                try:
+                    # Calls the smart contract getter method natively
+                    cert_details = contract.functions.getCertificate(cert_id.strip()).call()
+                    
+                    if cert_details and cert_details[0]: # Checks if valid structure returned
+                        st.success("Certificate Authenticated via On-Chain Records!")
+                        st.json({
+                            "UID": cert_id.strip(),
+                            "Student Name": cert_details[0],
+                            "Course Name": cert_details[1],
+                            "Organization": cert_details[2],
+                            "IPFS Hash Reference": cert_details[3]
+                        })
+                    else:
+                        st.error("Warning: Certificate records matching this UID were not found on the blockchain storage ledger.")
+                except Exception as e:
+                    st.error(f"Error accessing contract parameters: {str(e)}")
+        else:
+            st.warning("Please supply a functional UID parameter before initiating blockchain network lookups.")
