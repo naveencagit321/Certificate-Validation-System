@@ -1,63 +1,39 @@
 import streamlit as st
-from PIL import Image
 from utils.streamlit_utils import hide_icons, hide_sidebar, remove_whitespaces
-from pathlib import Path
 
-
+# ─── STREAMLIT PAGE CONFIGURATION ───
 st.set_page_config(layout="wide", initial_sidebar_state="collapsed")
 hide_icons()
 hide_sidebar()
 remove_whitespaces()
 
-st.markdown(
-    """
-    <style>
-        /* Permanently destroy the sidebar toggle button layout element */
-        [data-testid="stSidebarCollapseButton"] {
-            display: none !important;
-            visibility: hidden !important;
-        }
-        section[data-testid="stSidebar"] {
-            display: none !important;
-            width: 0px !important;
-        }
-    </style>
-    """,
-    unsafe_allow_html=True
-)
+# ─── MAIN LANDING HEADER ───
+st.markdown("<h1 style='text-align: center; margin-bottom: 10px;'>🎓 Certificate Validation System</h1>", unsafe_allow_html=True)
+st.markdown("<h4 style='text-align: center; color: #a1a1a1; margin-bottom: 40px;'>Select a portal role to experience the DApp live</h4>", unsafe_allow_html=True)
+st.write("---")
 
-
-st.title("Certificate Validation System")
-st.write("")
-st.subheader("Select Your Role")
-
-from pathlib import Path
-
-# 1. Dynamically locate the directory where app.py lives
-current_dir = Path(__file__).parent.resolve()
-root_dir = current_dir.parent
-
-col1, col2 = st.columns(2)
-
-# Fix paths using the robust pathlib setup
-institute_logo_path = root_dir / "assets" / "institute_logo.png"
-institite_logo = Image.open(institute_logo_path)
+# ─── INTERACTIVE ROLE SELECTION GRID ───
+# Creates balanced padding columns to align the interface beautifully on all screen resolutions
+pad_l, col1, spacer, col2, pad_r = st.columns([1, 4, 1, 4, 1])
 
 with col1:
-    st.image(institite_logo, output_format="jpg", width=230)
-    clicked_institute = st.button("Institute")
-
-company_logo_path = root_dir / "assets" / "company_logo.jpg"
-company_logo = Image.open(company_logo_path)
+    st.markdown("<div style='text-align: center;'>", unsafe_allow_html=True)
+    # Renders the institution graphic interface component
+    st.image("assets/institute_logo.png", width=220)
+    st.markdown("</div>", unsafe_allow_html=True)
+    
+    st.write("") # Spacing margin
+    if st.button("Institute Dashboard", use_container_width=True, key="go_to_inst"):
+        # Switches context directly to the public certificate generation workspace
+        st.switch_page("pages/institute.py")
 
 with col2:
-    st.image(company_logo, output_format="jpg", width=230)
-    clicked_verifier = st.button("Verifier")
-
-if clicked_institute:
-    st.session_state.profile = "Institute"
-    # Streamlit multi-page apps look inside the "pages" folder automatically 
-    st.switch_page("pages/login.py")
-elif clicked_verifier:
-    st.session_state.profile = "Verifier"
-    st.switch_page("pages/login.py")
+    st.markdown("<div style='text-align: center;'>", unsafe_allow_html=True)
+    # Renders the verification company graphic interface component
+    st.image("assets/company_logo.jpg", width=220)
+    st.markdown("</div>", unsafe_allow_html=True)
+    
+    st.write("") # Spacing margin
+    if st.button("Verifier Portal", use_container_width=True, key="go_to_ver"):
+        # Switches context directly to the public camera scanner workspace
+        st.switch_page("pages/verifier.py")
