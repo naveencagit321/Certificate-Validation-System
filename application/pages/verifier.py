@@ -32,7 +32,7 @@ st.markdown(
 if st.button("Home", key="nav_home_verifier_btn"):
     st.switch_page("app.py")
 
-st.markdown("<h2 style='margin-top: 10px;'>🔍 Verifier Verification Portal</h2>", unsafe_allow_html=True)
+st.markdown("<h2 style='margin-top: 10px;'>Verifier Verification Portal</h2>", unsafe_allow_html=True)
 st.write("---")
 
 # Initialize default session tracking for selector interface state
@@ -75,7 +75,7 @@ st.write("") # Margin spacing padding
 
 # ─── MODE CONDITION PIPELINE MODULES ───
 
-# 🛑 MODULE 1: NATIVE QR CODE SCANNER WORKSPACE
+# MODULE 1: NATIVE QR CODE SCANNER WORKSPACE
 if st.session_state.verification_mode == "QR Code Scanner":
     st.subheader("QR Code Scanner Workspace")
     camera_input = st.camera_input("Position the certificate QR code target clearly inside the viewport frame")
@@ -92,17 +92,17 @@ if st.session_state.verification_mode == "QR Code Scanner":
         else:
             st.error("No valid QR code layout detected in image. Please realign the target and try again.")
 
-# 🛑 MODULE 2: FILE UPLOAD SEGMENTATION WORKSPACE
+# MODULE 2: FILE UPLOAD SEGMENTATION WORKSPACE
 elif st.session_state.verification_mode == "Upload PDF":
     st.subheader("Upload Certificate PDF File Workspace")
     uploaded_file = st.file_uploader("Drop the digital certificate PDF file here for evaluation", type=["pdf"])
     
     if uploaded_file is not None:
         st.success("File uploaded successfully!")
-        # 💡 Verification logic placeholder: Extract text/metadata or match transaction parameters
+        # Verification logic placeholder: Extract text/metadata or match transaction parameters
         # Example tracking: hash_val = hashlib.sha256(uploaded_file.read()).hexdigest()
 
-# 🛑 MODULE 3: MANUAL REGISTRY TRANSACTION LOOKUP WORKSPACE
+# MODULE 3: MANUAL REGISTRY TRANSACTION LOOKUP WORKSPACE
 elif st.session_state.verification_mode == "Manual ID Lookup":
     st.subheader("Manual Certificate ID Identification Workspace")
     cert_id = st.text_input("Enter the unique Certificate Registration Identification Number (UID):")
