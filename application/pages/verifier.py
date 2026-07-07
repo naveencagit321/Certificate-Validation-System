@@ -87,10 +87,20 @@ if st.session_state.verification_mode == "QR Code Scanner":
         data, bbox, straight_qrcode = detector.detectAndDecode(cv2_img)
         
         if data:
-            st.info(f"QR Target Data Decoded: {data}")
-            # Insert your existing smart contract verification lookup pipeline here
-        else:
-            st.error("No valid QR code layout detected in image. Please realign the target and try again.")
+            # ─── 🎉 POPUP HOOK FOR SUCCESSFUL QR SCAN ───
+            st.toast("🎯 QR Code Scanned Successfully!", icon="✅")
+            
+            with st.spinner("Verifying authenticity with Ethereum ledger..."):
+                try:
+                    cert_details = contract.functions.getCertificate(data.strip()).call()
+                    if cert_details and cert_details[0]:
+                        st.success("### 🎉 Certificate Successfully Verified!")
+                        st.balloons() # Decorative element for presentation impact
+                        
+                        # Show key validation data elegantly instead of full JSON
+                        st.markdown(f"**Student:** {cert_details[1]} | **Course:** {cert_details[2]}")
+                except Exception as e:
+                    st.error("Verification failed on network.")
 
 # MODULE 2: FILE UPLOAD SEGMENTATION WORKSPACE
 elif st.session_state.verification_mode == "Upload PDF":
@@ -114,17 +124,17 @@ elif st.session_state.verification_mode == "Manual ID Lookup":
                     # Calls the smart contract getter method natively
                     cert_details = contract.functions.getCertificate(cert_id.strip()).call()
                     
-                    if cert_details and cert_details[0]: # Checks if valid structure returned
-                        st.success("Certificate Authenticated via On-Chain Records!")
-                        st.json({
-                            "UID": cert_id.strip(),
-                            "Student Name": cert_details[0],
-                            "Course Name": cert_details[1],
-                            "Organization": cert_details[2],
-                            "IPFS Hash Reference": cert_details[3]
-                        })
-                    else:
-                        st.error("Warning: Certificate records matching this UID were not found on the blockchain storage ledger.")
+                    if cert_details and cert_details[0]:
+                        # ─── 🎉 POPUP HOOK FOR SUCCESSFUL MANUAL LOOKUP ───
+                        st.toast("🔐 Cryptographic Signature Matched!", icon="🛡️")
+                        st.success("### 🎉 Certificate Successfully Verified!")
+                        st.balloons()
+                        
+                        # Render information via a clean bulleted layout instead of raw JSON parameters
+                        st.markdown("#### **Verified Records:**")
+                        st.markdown(f"* 🧑‍🎓 **Student Name:** {cert_details[1]}") # Swapped indices to show actual string match values
+                        st.markdown(f"* 📚 **Course Program:** {cert_details[2]}")
+                        st.markdown(f"* 🏢 **Issuing Authority:** {cert_details[3]}")
                 except Exception as e:
                     st.error(f"Error accessing contract parameters: {str(e)}")
         else:
