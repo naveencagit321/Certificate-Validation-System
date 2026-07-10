@@ -192,3 +192,24 @@ if submit:
 
     if temp_logo_path and os.path.exists(temp_logo_path): os.remove(temp_logo_path)
     if os.path.exists(pdf_file_path): os.remove(pdf_file_path)
+
+st.write("---")
+st.subheader("Administrative Actions (Revocation Panel)")
+
+# Input field to target the bad certificate UID
+revoke_uid = st.text_input("Enter Certificate UID to Revoke:", key="revoke_uid_input")
+
+if st.button("Revoke Certificate Permanently", use_container_width=True):
+    if revoke_uid.strip():
+        with st.spinner("Broadcasting revocation transaction to Ethereum..."):
+            try:
+                tx_hash = contract.functions.revokeCertificate(revoke_uid.strip()).transact({'from': w3.eth.accounts[0]})
+                
+                st.error(f"Transaction Confirmed! Certificate {revoke_uid} has been officially revoked.")
+                st.info(f"Block Transaction Hash: {tx_hash.hex()}")
+            except Exception as e:
+                st.error(f"Revocation failed: {str(e)}")
+    else:
+        st.warning("Please enter a valid UID to execute this administrative function.")
+
+
