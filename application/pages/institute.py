@@ -154,7 +154,7 @@ if submit:
     ipfs_hash = upload_to_pinata(pdf_file_path, api_key, api_secret)
 
     try:
-        contract_txn = contract.functions.generateCertificate(
+        contract_txn = contract.functions.issueCertificate(
             certificate_id, uid, candidate_name, course_name, org_name, ipfs_hash
         ).build_transaction({
             'chainId': 11155111,
