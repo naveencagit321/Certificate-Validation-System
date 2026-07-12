@@ -4,6 +4,7 @@ import os
 import numpy as np
 from connection import contract
 from utils.streamlit_utils import hide_icons, hide_sidebar, remove_whitespaces
+import web3
 
 # ─── STREAMLIT PAGE CONFIGURATION ───
 st.set_page_config(layout="wide", initial_sidebar_state="collapsed")
@@ -154,3 +155,29 @@ elif st.session_state.verification_mode == "Manual ID Lookup":
                     st.error(f"Error accessing contract parameters: {str(e)}")
         else:
             st.warning("Please supply a functional UID parameter before initiating blockchain network lookups.")
+
+# ─── ADMIN PRIVATE KEY CONFIGURATION ───
+admin_private_key = os.getenv("PRIVATE_KEY")
+
+if not admin_private_key:
+    raise ValueError("Error: PRIVATE_KEY must be set for Sepolia transaction signing.")
+
+admin_account = w3.eth.account.from_key(admin_private_key)
+admin_address = admin_account.address
+
+# ─── SIGNING TRANSACTION MODULE ───
+def sign_transaction(built_tx, private_key=admin_private_key):
+    signed_tx = w3.eth.account.sign_transaction(built_tx, private_key=admin_private_key)
+    tx_hash = w3.eth.send_raw_transaction(signed_tx.rawTransaction)
+    return tx_hash
+
+# ─── REVOKATION TRANSACTION MODULE ───
+def revoke_certificate(target_uid):
+    built_tx = contract.functions.revokeCertificate(target_uid).build_transaction({
+        'chainId': w3.eth.chain_id,
+        'gas': 200000,
+        'gasPrice': w3.eth.gas_price,
+        'nonce': nonce,
+        'from': admin_address,
+    })
+    return sign_transaction(built_tx)
