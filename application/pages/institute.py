@@ -192,7 +192,3 @@ if submit:
 
     if temp_logo_path and os.path.exists(temp_logo_path): os.remove(temp_logo_path)
     if os.path.exists(pdf_file_path): os.remove(pdf_file_path)
-
-st.write("---")
-
-

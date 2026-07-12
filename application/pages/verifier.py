@@ -98,10 +98,7 @@ if st.session_state.verification_mode == "QR Code Scanner":
                         st.balloons() # Decorative element for presentation impact
                         
                         # Show key validation data elegantly instead of full JSON
-                        st.markdown("#### **Verified Records:**")
-                        st.markdown(f"* 🧑‍🎓 **Student Name:** {cert_details[0]}")
-                        st.markdown(f"* 📚 **Course Program:** {cert_details[1]}")
-                        st.markdown(f"* 🏢 **Issuing Authority:** {cert_details[2]}")
+                        st.markdown(f"**Student:** {cert_details[1]} | **Course:** {cert_details[2]}")
                 except Exception as e:
                     st.error("Verification failed on network.")
 
@@ -135,9 +132,9 @@ elif st.session_state.verification_mode == "Manual ID Lookup":
                         
                         # Render information via a clean bulleted layout instead of raw JSON parameters
                         st.markdown("#### **Verified Records:**")
-                        st.markdown(f"* 🧑‍🎓 **Student Name:** {cert_details[0]}")
-                        st.markdown(f"* 📚 **Course Program:** {cert_details[1]}")
-                        st.markdown(f"* 🏢 **Issuing Authority:** {cert_details[2]}")
+                        st.markdown(f"* 🧑‍🎓 **Student Name:** {cert_details[1]}") # Swapped indices to show actual string match values
+                        st.markdown(f"* 📚 **Course Program:** {cert_details[2]}")
+                        st.markdown(f"* 🏢 **Issuing Authority:** {cert_details[3]}")
                 except Exception as e:
                     st.error(f"Error accessing contract parameters: {str(e)}")
         else:
