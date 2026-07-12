@@ -94,11 +94,20 @@ if st.session_state.verification_mode == "QR Code Scanner":
                 try:
                     cert_details = contract.functions.getCertificate(data.strip()).call()
                     if cert_details and cert_details[0]:
-                        st.success("### 🎉 Certificate Successfully Verified!")
-                        st.balloons() # Decorative element for presentation impact
-                        
-                        # Show key validation data elegantly instead of full JSON
-                        st.markdown(f"**Student:** {cert_details[1]} | **Course:** {cert_details[2]}")
+                        on_chain_revoked = cert_details[4]
+
+                        if on_chain_revoked:
+                            st.error("### ❌ Warning: This credential has been officially REVOKED by the issuing institution.")
+                            st.info("Historical data ledger footprint exists, but the cryptographic token signature is explicitly flagged as INVALID.")
+                        else:
+                            st.success("### 🎉 Certificate Successfully Verified!")
+                            st.balloons() # Decorative element for presentation impact
+                            
+                            # Show key validation data elegantly instead of full JSON
+                            st.markdown("#### **Verified Records:**")
+                            st.markdown(f"* 🧑‍🎓 **Student Name:** {cert_details[0]}")
+                            st.markdown(f"* 📚 **Course Program:** {cert_details[1]}")
+                            st.markdown(f"* 🏢 **Issuing Authority:** {cert_details[2]}")
                 except Exception as e:
                     st.error("Verification failed on network.")
 
@@ -125,16 +134,22 @@ elif st.session_state.verification_mode == "Manual ID Lookup":
                     cert_details = contract.functions.getCertificate(cert_id.strip()).call()
                     
                     if cert_details and cert_details[0]:
-                        # ─── 🎉 POPUP HOOK FOR SUCCESSFUL MANUAL LOOKUP ───
-                        st.toast("🔐 Cryptographic Signature Matched!", icon="🛡️")
-                        st.success("### 🎉 Certificate Successfully Verified!")
-                        st.balloons()
-                        
-                        # Render information via a clean bulleted layout instead of raw JSON parameters
-                        st.markdown("#### **Verified Records:**")
-                        st.markdown(f"* 🧑‍🎓 **Student Name:** {cert_details[1]}") # Swapped indices to show actual string match values
-                        st.markdown(f"* 📚 **Course Program:** {cert_details[2]}")
-                        st.markdown(f"* 🏢 **Issuing Authority:** {cert_details[3]}")
+                        on_chain_revoked = cert_details[4]
+
+                        if on_chain_revoked:
+                            st.error("### ❌ Warning: This credential has been officially REVOKED by the issuing institution.")
+                            st.info("Historical data ledger footprint exists, but the cryptographic token signature is explicitly flagged as INVALID.")
+                        else:
+                            # ─── 🎉 POPUP HOOK FOR SUCCESSFUL MANUAL LOOKUP ───
+                            st.toast("🔐 Cryptographic Signature Matched!", icon="🛡️")
+                            st.success("### 🎉 Certificate Successfully Verified!")
+                            st.balloons()
+                            
+                            # Render information via a clean bulleted layout instead of raw JSON parameters
+                            st.markdown("#### **Verified Records:**")
+                            st.markdown(f"* 🧑‍🎓 **Student Name:** {cert_details[0]}")
+                            st.markdown(f"* 📚 **Course Program:** {cert_details[1]}")
+                            st.markdown(f"* 🏢 **Issuing Authority:** {cert_details[2]}")
                 except Exception as e:
                     st.error(f"Error accessing contract parameters: {str(e)}")
         else:

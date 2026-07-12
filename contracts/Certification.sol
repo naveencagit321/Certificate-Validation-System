@@ -1,82 +1,59 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.13;
+pragma solidity ^0.8.0;
 
 contract Certification {
+    address public owner;
+
     struct Certificate {
-        string uid;
-        string candidate_name;
-        string course_name;
-        string org_name;
-        string ipfs_hash;
+        string studentName;
+        string courseName;
+        string organization;
+        string ipfsHash;
+        bool isRevoked; // 🌟 1. On-chain state tracking switch
     }
 
-    mapping(string => Certificate) public certificates;
-    event certificateGenerated(string certificate_id);
+    mapping(string => Certificate) private certificates;
 
-    function generateCertificate(
-        string memory _certificate_id,
-        string memory _uid,
-        string memory _candidate_name,
-        string memory _course_name,
-        string memory _org_name,
-        string memory _ipfs_hash
-    ) public {
-        // Check if certificate with the given ID already exists
-        require(
-            bytes(certificates[_certificate_id].ipfs_hash).length == 0,
-            "Certificate with this ID already exists"
-        );
+    event CertificateIssued(string indexed uid, string studentName, string courseName);
+    event CertificateRevoked(string indexed uid);
 
-        // Create the certificate
-        Certificate memory cert = Certificate({
-            uid: _uid,
-            candidate_name: _candidate_name,
-            course_name: _course_name,
-            org_name: _org_name,
-            ipfs_hash: _ipfs_hash
-        });
-
-        // Store the certificate in the mapping
-        certificates[_certificate_id] = cert;
-
-        // Emit an event
-        emit certificateGenerated(_certificate_id);
+    modifier onlyOwner() {
+        require(msg.sender == owner, "Error: Caller is not the authorized administrator.");
+        _;
     }
 
-    function getCertificate(
-        string memory _certificate_id
-    )
-        public
-        view
-        returns (
-            string memory _uid,
-            string memory _candidate_name,
-            string memory _course_name,
-            string memory _org_name,
-            string memory _ipfs_hash
-        )
-    {
-        Certificate memory cert = certificates[_certificate_id];
-
-        // Check if the certificate with the given ID exists
-        require(
-            bytes(certificates[_certificate_id].ipfs_hash).length != 0,
-            "Certificate with this ID does not exist"
-        );
-
-        // Return the values from the certificate
-        return (
-            cert.uid,
-            cert.candidate_name,
-            cert.course_name,
-            cert.org_name,
-            cert.ipfs_hash
-        );
+    constructor() {
+        owner = msg.sender;
     }
 
-    function isVerified(
-        string memory _certificate_id
-    ) public view returns (bool) {
-        return bytes(certificates[_certificate_id].ipfs_hash).length != 0;
+    // Update issuance function to explicitly initialize the status as false (not revoked)
+    function issueCertificate(
+        string memory _uid, 
+        string memory _name, 
+        string memory _course, 
+        string memory _org,
+        string memory _ipfs
+    ) public onlyOwner {
+        require(bytes(certificates[_uid].studentName).length == 0, "Error: Certificate UID already exists.");
+        certificates[_uid] = Certificate(_name, _course, _org, _ipfs, false);
+        emit CertificateIssued(_uid, _name, _course);
+    }
+
+    // 🌟 2. THE REAL REVOCATION WRITER FUNCTION
+    function revokeCertificate(string memory _uid) public onlyOwner {
+        require(bytes(certificates[_uid].studentName).length > 0, "Error: Target certificate target does not exist.");
+        require(!certificates[_uid].isRevoked, "Error: This target credential has already been revoked.");
+        
+        certificates[_uid].isRevoked = true; // Flips state flag permanently on the block ledger
+        emit CertificateRevoked(_uid);
+    }
+
+    // Update getter method to pass the boolean flag back to Web3.py
+    function getCertificate(string memory _uid) public view returns (
+        string memory, string memory, string memory, string memory, bool
+    ) {
+        Certificate memory cert = certificates[_uid];
+        require(bytes(cert.studentName).length > 0, "Certificate record absent.");
+        return (cert.studentName, cert.courseName, cert.organization, cert.ipfsHash, cert.isRevoked);
     }
 }

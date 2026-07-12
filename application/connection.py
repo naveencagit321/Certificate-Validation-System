@@ -9,7 +9,6 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 load_dotenv(BASE_DIR / ".env")
 
 # Connect to the live Sepolia network using your Alchemy URL from the .env file
-# Connect to the live Sepolia network using your Alchemy URL from the .env file
 raw_url = os.getenv("SEPOLIA_RPC_URL")
 if not raw_url:
     raise ValueError("Error: SEPOLIA_RPC_URL not found in environment variables. Check your .env file.")
@@ -39,7 +38,12 @@ deployment_config_fpath = root_dir / "deployment_config.json"
 
 with open(deployment_config_fpath, 'r') as json_file:
     address_data = json.load(json_file)
-contract_address = address_data.get('Certification')
+
+# 🌟 FIX: Convert the raw string address to an EIP-55 checksum format safely
+raw_address = address_data.get('Certification')
+if not raw_address:
+    raise ValueError("Error: 'Certification' key target not found inside deployment_config.json.")
+contract_address = w3.to_checksum_address(raw_address.strip())
 
 # Interact with the live smart contract
 contract = w3.eth.contract(address=contract_address, abi=contract_abi)
