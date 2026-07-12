@@ -12,13 +12,11 @@ module.exports = {
         process.env.PRIVATE_KEY, 
         process.env.SEPOLIA_RPC_URL
       ),
-      network_id: 11155111,
-      gas: 2500000,                 // 🌟 Safely lowered down to 2.5M to drop the upfront requirement
-      gasPrice: 10000000000,        // 🌟 Set to 10 gwei (standard Sepolia base price)
-      confirmations: 2,
-      timeoutBlocks: 200,
-      networkCheckTimeout: 1000000,
-      skipDryRun: true
+      network_id: 11155111, // Sepolia's official network ID
+      gas: 5500000,         // Gas limit
+      confirmations: 2,     // Wait for 2 confirmations to ensure deployment
+      timeoutBlocks: 200,   // Wait time before failing
+      skipDryRun: true      // Skip dry run before migrations
     }
   },
   compilers: {
