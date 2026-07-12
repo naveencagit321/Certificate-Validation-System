@@ -194,48 +194,5 @@ if submit:
     if os.path.exists(pdf_file_path): os.remove(pdf_file_path)
 
 st.write("---")
-st.subheader("🛡️ Administrative Actions (Revocation Panel)")
-
-revoke_uid = st.text_input("Enter Certificate UID to Revoke Permanently:", key="real_revoke_uid_input")
-
-if st.button("🔴 Revoke Certificate on Blockchain", use_container_width=True):
-    if revoke_uid.strip():
-        target_uid = revoke_uid.strip()
-        with st.spinner("Building and broadcasting revocation transaction to Ethereum network..."):
-            try:
-                from connection import contract, w3
-                
-                # Fetch administrative account details securely (using environment variable variables for production)
-                import os
-                admin_private_key = os.getenv("PRIVATE_KEY") 
-                admin_address = w3.eth.accounts[0] # Fallback if utilizing local node infrastructure
-                
-                # 1. Build the transaction dictionary object
-                nonce = w3.eth.get_transaction_count(admin_address)
-                built_tx = contract.functions.revokeCertificate(target_uid).build_transaction({
-                    'chainId': w3.eth.chain_id,
-                    'gas': 200000,
-                    'gasPrice': w3.eth.gas_price,
-                    'nonce': nonce,
-                })
-                
-                # 2. Sign transaction locally if handling custom private key keys
-                if admin_private_key:
-                    signed_tx = w3.eth.account.sign_transaction(built_tx, private_key=admin_private_key)
-                    tx_hash = w3.eth.send_raw_transaction(signed_tx.rawTransaction)
-                else:
-                    # Alternate routing if operating standard local node test accounts
-                    tx_hash = contract.functions.revokeCertificate(target_uid).transact({'from': admin_address})
-                
-                # 3. Wait for block confirmation receipt
-                st.info("Transaction broadcasted. Waiting for network confirmation receipt...")
-                w3.eth.wait_for_transaction_receipt(tx_hash)
-                
-                st.error(f"✅ Confirmed! Certificate {target_uid} has been officially REVOKED on-chain.")
-                st.info(f"Block Transaction Hash Reference: {tx_hash.hex()}")
-            except Exception as e:
-                st.error(f"On-chain execution failed: {str(e)}")
-    else:
-        st.warning("Please supply a valid UID entry to update the ledger state.")
 
 

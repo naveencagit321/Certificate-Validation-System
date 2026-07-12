@@ -4,7 +4,6 @@ import os
 import numpy as np
 from connection import contract
 from utils.streamlit_utils import hide_icons, hide_sidebar, remove_whitespaces
-import web3
 
 # ─── STREAMLIT PAGE CONFIGURATION ───
 st.set_page_config(layout="wide", initial_sidebar_state="collapsed")
@@ -95,20 +94,14 @@ if st.session_state.verification_mode == "QR Code Scanner":
                 try:
                     cert_details = contract.functions.getCertificate(data.strip()).call()
                     if cert_details and cert_details[0]:
-                        on_chain_revoked = cert_details[4]
-
-                        if on_chain_revoked:
-                            st.error("### ❌ Warning: This credential has been officially REVOKED by the issuing institution.")
-                            st.info("Historical data ledger footprint exists, but the cryptographic token signature is explicitly flagged as INVALID.")
-                        else:
-                            st.success("### 🎉 Certificate Successfully Verified!")
-                            st.balloons() # Decorative element for presentation impact
-                            
-                            # Show key validation data elegantly instead of full JSON
-                            st.markdown("#### **Verified Records:**")
-                            st.markdown(f"* 🧑‍🎓 **Student Name:** {cert_details[0]}")
-                            st.markdown(f"* 📚 **Course Program:** {cert_details[1]}")
-                            st.markdown(f"* 🏢 **Issuing Authority:** {cert_details[2]}")
+                        st.success("### 🎉 Certificate Successfully Verified!")
+                        st.balloons() # Decorative element for presentation impact
+                        
+                        # Show key validation data elegantly instead of full JSON
+                        st.markdown("#### **Verified Records:**")
+                        st.markdown(f"* 🧑‍🎓 **Student Name:** {cert_details[0]}")
+                        st.markdown(f"* 📚 **Course Program:** {cert_details[1]}")
+                        st.markdown(f"* 🏢 **Issuing Authority:** {cert_details[2]}")
                 except Exception as e:
                     st.error("Verification failed on network.")
 
@@ -135,49 +128,17 @@ elif st.session_state.verification_mode == "Manual ID Lookup":
                     cert_details = contract.functions.getCertificate(cert_id.strip()).call()
                     
                     if cert_details and cert_details[0]:
-                        on_chain_revoked = cert_details[4]
-
-                        if on_chain_revoked:
-                            st.error("### ❌ Warning: This credential has been officially REVOKED by the issuing institution.")
-                            st.info("Historical data ledger footprint exists, but the cryptographic token signature is explicitly flagged as INVALID.")
-                        else:
-                            # ─── 🎉 POPUP HOOK FOR SUCCESSFUL MANUAL LOOKUP ───
-                            st.toast("🔐 Cryptographic Signature Matched!", icon="🛡️")
-                            st.success("### 🎉 Certificate Successfully Verified!")
-                            st.balloons()
-                            
-                            # Render information via a clean bulleted layout instead of raw JSON parameters
-                            st.markdown("#### **Verified Records:**")
-                            st.markdown(f"* 🧑‍🎓 **Student Name:** {cert_details[0]}")
-                            st.markdown(f"* 📚 **Course Program:** {cert_details[1]}")
-                            st.markdown(f"* 🏢 **Issuing Authority:** {cert_details[2]}")
+                        # ─── 🎉 POPUP HOOK FOR SUCCESSFUL MANUAL LOOKUP ───
+                        st.toast("🔐 Cryptographic Signature Matched!", icon="🛡️")
+                        st.success("### 🎉 Certificate Successfully Verified!")
+                        st.balloons()
+                        
+                        # Render information via a clean bulleted layout instead of raw JSON parameters
+                        st.markdown("#### **Verified Records:**")
+                        st.markdown(f"* 🧑‍🎓 **Student Name:** {cert_details[0]}")
+                        st.markdown(f"* 📚 **Course Program:** {cert_details[1]}")
+                        st.markdown(f"* 🏢 **Issuing Authority:** {cert_details[2]}")
                 except Exception as e:
                     st.error(f"Error accessing contract parameters: {str(e)}")
         else:
             st.warning("Please supply a functional UID parameter before initiating blockchain network lookups.")
-
-# ─── ADMIN PRIVATE KEY CONFIGURATION ───
-admin_private_key = os.getenv("PRIVATE_KEY")
-
-if not admin_private_key:
-    raise ValueError("Error: PRIVATE_KEY must be set for Sepolia transaction signing.")
-
-admin_account = w3.eth.account.from_key(admin_private_key)
-admin_address = admin_account.address
-
-# ─── SIGNING TRANSACTION MODULE ───
-def sign_transaction(built_tx, private_key=admin_private_key):
-    signed_tx = w3.eth.account.sign_transaction(built_tx, private_key=admin_private_key)
-    tx_hash = w3.eth.send_raw_transaction(signed_tx.rawTransaction)
-    return tx_hash
-
-# ─── REVOKATION TRANSACTION MODULE ───
-def revoke_certificate(target_uid):
-    built_tx = contract.functions.revokeCertificate(target_uid).build_transaction({
-        'chainId': w3.eth.chain_id,
-        'gas': 200000,
-        'gasPrice': w3.eth.gas_price,
-        'nonce': nonce,
-        'from': admin_address,
-    })
-    return sign_transaction(built_tx)

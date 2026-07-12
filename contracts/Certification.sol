@@ -9,13 +9,11 @@ contract Certification {
         string courseName;
         string organization;
         string ipfsHash;
-        bool isRevoked; // 🌟 1. On-chain state tracking switch
     }
 
     mapping(string => Certificate) private certificates;
 
     event CertificateIssued(string indexed uid, string studentName, string courseName);
-    event CertificateRevoked(string indexed uid);
 
     modifier onlyOwner() {
         require(msg.sender == owner, "Error: Caller is not the authorized administrator.");
@@ -35,25 +33,16 @@ contract Certification {
         string memory _ipfs
     ) public onlyOwner {
         require(bytes(certificates[_uid].studentName).length == 0, "Error: Certificate UID already exists.");
-        certificates[_uid] = Certificate(_name, _course, _org, _ipfs, false);
+        certificates[_uid] = Certificate(_name, _course, _org, _ipfs);
         emit CertificateIssued(_uid, _name, _course);
     }
 
-    // 🌟 2. THE REAL REVOCATION WRITER FUNCTION
-    function revokeCertificate(string memory _uid) public onlyOwner {
-        require(bytes(certificates[_uid].studentName).length > 0, "Error: Target certificate target does not exist.");
-        require(!certificates[_uid].isRevoked, "Error: This target credential has already been revoked.");
-        
-        certificates[_uid].isRevoked = true; // Flips state flag permanently on the block ledger
-        emit CertificateRevoked(_uid);
-    }
-
-    // Update getter method to pass the boolean flag back to Web3.py
+    // Getter method returns the stored certificate data without revocation state
     function getCertificate(string memory _uid) public view returns (
-        string memory, string memory, string memory, string memory, bool
+        string memory, string memory, string memory, string memory
     ) {
         Certificate memory cert = certificates[_uid];
         require(bytes(cert.studentName).length > 0, "Certificate record absent.");
-        return (cert.studentName, cert.courseName, cert.organization, cert.ipfsHash, cert.isRevoked);
+        return (cert.studentName, cert.courseName, cert.organization, cert.ipfsHash);
     }
 }
