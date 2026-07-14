@@ -90,23 +90,23 @@ def send_email_with_attachment(recipient_emails, subject, body, file_path):
 
 # Placeholder structural stubs to prevent pipeline dependencies from raising runtime exceptions
 def generate_certificate(pdf_path, uid, name, course, org, logo_path, cert_id):
-    """Generates a geometrically valid binary PDF layout artifact."""
+    """Generates a geometrically valid binary PDF layout artifact with a built-in verification QR code."""
     try:
         c = canvas.Canvas(pdf_path, pagesize=letter)
         
-        # Draw background/borders
+        # Draw background border layout lines
         c.setLineWidth(5)
         c.setStrokeColorRGB(0.1, 0.2, 0.4)
         c.rect(20, 20, 572, 752)
         
-        # Add institute logo if provided
+        # Add institute logo image if provided
         if logo_path and os.path.exists(logo_path):
             try:
                 c.drawImage(logo_path, 250, 650, width=100, height=50)
             except Exception:
                 pass
         
-        # Add valid typography elements
+        # Typography text elements layout
         c.setFont("Helvetica-Bold", 28)
         c.drawCentredString(306, 550, "CERTIFICATE OF COMPLETION")
         
@@ -117,7 +117,7 @@ def generate_certificate(pdf_path, uid, name, course, org, logo_path, cert_id):
         c.drawCentredString(306, 430, name)
         
         c.setFont("Helvetica", 14)
-        c.drawCentredString(306, 380, f"For successfully completing the course program:")
+        c.drawCentredString(306, 380, "For successfully completing the course program:")
         c.setFont("Helvetica-Oblique", 16)
         c.drawCentredString(306, 350, course)
         
@@ -125,13 +125,28 @@ def generate_certificate(pdf_path, uid, name, course, org, logo_path, cert_id):
         c.drawCentredString(306, 280, f"Authorized by: {org}")
         c.drawCentredString(306, 260, f"Student UID: {uid}")
         
-        # Embed the verification footprint hash at the footer
+        # 🌟 DYNAMICALLY GENERATE AND ATTACH THE QR CODE TARGET DIRECTLY INSIDE THE PDF
+        # We encode the 'uid' string since that's what the contract reads!
+        qr = qrcode.QRCode(version=1, box_size=3, border=1)
+        qr.add_data(uid.strip())
+        qr.make(fit=True)
+        qr_img = qr.make_image(fill_color="black", back_color="white")
+        
+        temp_qr_pdf_path = "temp_pdf_qr.png"
+        qr_img.save(temp_qr_pdf_path)
+        
+        # Draw the QR code target asset box image near the bottom right center
+        c.drawImage(temp_qr_pdf_path, 256, 120, width=100, height=100)
+        if os.path.exists(temp_qr_pdf_path):
+            os.remove(temp_qr_pdf_path)
+        
+        # Embed the validation verification fingerprint footprint hash at the footer lines
         c.setFont("Courier", 8)
         c.setFillColorRGB(0.5, 0.5, 0.5)
         c.drawCentredString(306, 50, f"Verification Ledger ID: {cert_id}")
         
         c.save()
-        print(f"Successfully compiled valid binary PDF metadata artifact to {pdf_path}")
+        print(f"Successfully compiled valid binary PDF layout artifact with attached verification QR code to {pdf_path}")
     except Exception as e:
         st.error(f"Failed to compile valid PDF artifact layer: {e}")
 
@@ -340,7 +355,7 @@ if selected == options[0]:
             st.code(certificate_id, language=None)
 
             st.write("Dynamic Routing QR Verification Grid Target Allocation:")
-            qr_img = qrcode.make(certificate_id)
+            qr_img = qrcode.make(uid.strip())
             qr_img.save("certificate_qr.png")
             st.image("certificate_qr.png", width=200)
             with open("certificate_qr.png", "rb") as file:
