@@ -174,8 +174,21 @@ if selected == options[0]:
                 })
 
                 signed_txn = w3.eth.account.sign_transaction(contract_txn, private_key=private_key)
+                # web3.py versions differ in attribute naming for the signed raw bytes
+                raw_tx = getattr(signed_txn, 'rawTransaction', None) or getattr(signed_txn, 'raw_transaction', None)
+                # some implementations return a dict-like object
+                if raw_tx is None:
+                    try:
+                        raw_tx = signed_txn.get('rawTransaction') or signed_txn.get('raw_transaction')
+                    except Exception:
+                        raw_tx = None
+
+                if raw_tx is None:
+                    st.error('Signed transaction object missing raw transaction bytes; cannot submit to network.')
+                    raise RuntimeError('Signed transaction missing raw bytes')
+
                 start_time = time.time()
-                tx_hash = w3.eth.send_raw_transaction(signed_txn.rawTransaction)
+                tx_hash = w3.eth.send_raw_transaction(raw_tx)
                 receipt = w3.eth.wait_for_transaction_receipt(tx_hash)
                 end_time = time.time()
                 blockchain_submitted = True
