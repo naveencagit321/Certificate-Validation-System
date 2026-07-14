@@ -9,6 +9,9 @@ import smtplib
 import qrcode
 import pandas as pd
 from pathlib import Path
+# 🌟 ADD THESE IMPORTS AT THE VERY TOP OF YOUR FILE
+from reportlab.lib.pagesizes import letter
+from reportlab.pdfgen import canvas
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.mime.base import MIMEBase
