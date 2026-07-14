@@ -4,6 +4,7 @@ import json
 import os
 import time
 import pandas as pd
+from pathlib import Path
 from dotenv import load_dotenv
 import hashlib
 from utils.cert_utils import generate_certificate
@@ -28,6 +29,7 @@ remove_whitespaces()
 
 load_dotenv()
 
+ROOT_DIR = Path(__file__).resolve().parents[2]
 api_key = os.getenv("PINATA_API_KEY")
 api_secret = os.getenv("PINATA_API_SECRET")
 
@@ -91,7 +93,7 @@ def send_email_with_attachment(recipient_emails, subject, body, file_path):
 # ----------------------------------------------------
 
 options = ("Generate Certificate", "View Certificates")
-selected = st.selectbox("", options, label_visibility="hidden")
+selected = st.selectbox("Choose an action", options)
 
 if selected == options[0]:
     col1, col2 = st.columns(2)
@@ -115,18 +117,18 @@ if selected == options[0]:
 
     
     if submit:
-        # Define default and temporary logo paths
-        default_logo_path = "../assets/logo.jpg"
+        default_logo_path = str(ROOT_DIR / "assets" / "logo.jpg")
+        institute_logo_path = None
         temp_logo_path = None
 
         if uploaded_logo is not None:
-            # If a logo is uploaded, save it to a temporary file
-            temp_logo_path = os.path.join("temp_logo." + uploaded_logo.name.split('.')[-1])
+            temp_dir = ROOT_DIR / "application"
+            temp_dir.mkdir(exist_ok=True)
+            temp_logo_path = str(temp_dir / f"temp_logo.{uploaded_logo.name.split('.')[-1]}")
             with open(temp_logo_path, "wb") as f:
                 f.write(uploaded_logo.getbuffer())
             institute_logo_path = temp_logo_path
-        else:
-            # If no logo is uploaded, use the default one
+        elif os.path.exists(default_logo_path):
             institute_logo_path = default_logo_path
 
         # --- KEY CHANGE: Generate certificate_id FIRST ---
@@ -135,6 +137,9 @@ if selected == options[0]:
 
         pdf_file_path = "certificate.pdf"
         generate_certificate(pdf_file_path, uid, candidate_name, course_name, org_name, institute_logo_path, certificate_id)
+
+        if temp_logo_path and os.path.exists(temp_logo_path):
+            os.remove(temp_logo_path)
 
         # Upload the PDF to Pinata
         ipfs_hash = upload_to_pinata(pdf_file_path, api_key, api_secret)

@@ -5,6 +5,7 @@ from reportlab.lib.units import inch
 import pdfplumber
 import qrcode
 import os
+from pathlib import Path
 
 def generate_certificate(output_path, uid, candidate_name, course_name, org_name, institute_logo_path, certificate_id):
     # Create a PDF document
@@ -32,8 +33,13 @@ def generate_certificate(output_path, uid, candidate_name, course_name, org_name
 
     # Add institute logo and institute name
     if institute_logo_path:
-        logo = Image(institute_logo_path, width=150, height=150)
-        elements.append(logo)
+        logo_path = Path(institute_logo_path)
+        if logo_path.exists():
+            try:
+                logo = Image(str(logo_path), width=150, height=150)
+                elements.append(logo)
+            except Exception as exc:
+                print(f"Warning: could not load institute logo {logo_path}: {exc}")
 
     # Add institute name
     institute_style = ParagraphStyle(
