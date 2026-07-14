@@ -167,43 +167,86 @@ if selected == options[0]:
         if not private_key:
             st.warning("PRIVATE_KEY is not configured. The certificate was created locally but was not submitted to the blockchain.")
         else:
-            try:
-                account = w3.eth.account.from_key(private_key)
-                contract_txn = contract.functions.generateCertificate(
-                    certificate_id,
-                    uid,
-                    candidate_name,
-                    course_name,
-                    org_name,
-                    ipfs_hash
-                ).build_transaction({
-                    'chainId': 11155111,
-                    'gas': 300000,
-                    'gasPrice': w3.eth.gas_price,
-                    'nonce': w3.eth.get_transaction_count(account.address),
-                })
+            # normalize private key
+            if not private_key.startswith('0x'):
+                private_key = '0x' + private_key
 
-                signed_txn = w3.eth.account.sign_transaction(contract_txn, private_key=private_key)
-                # web3.py versions differ in attribute naming for the signed raw bytes
-                raw_tx = getattr(signed_txn, 'rawTransaction', None) or getattr(signed_txn, 'raw_transaction', None)
-                # some implementations return a dict-like object
-                if raw_tx is None:
+            if not ipfs_hash:
+                st.error("IPFS upload failed — certificate not submitted on-chain.")
+            else:
+                try:
+                    account = w3.eth.account.from_key(private_key)
+
+                    # estimate gas if possible
                     try:
-                        raw_tx = signed_txn.get('rawTransaction') or signed_txn.get('raw_transaction')
+                        estimated_gas = contract.functions.generateCertificate(
+                            certificate_id,
+                            uid,
+                            candidate_name,
+                            course_name,
+                            org_name,
+                            ipfs_hash
+                        ).estimate_gas({'from': account.address})
+                        gas_limit = int(estimated_gas * 1.2)
                     except Exception:
-                        raw_tx = None
+                        gas_limit = 300000
 
-                if raw_tx is None:
-                    st.error('Signed transaction object missing raw transaction bytes; cannot submit to network.')
-                    raise RuntimeError('Signed transaction missing raw bytes')
+                    # use pending nonce to avoid nonce collisions
+                    nonce = w3.eth.get_transaction_count(account.address, 'pending')
 
-                start_time = time.time()
-                tx_hash = w3.eth.send_raw_transaction(raw_tx)
-                receipt = w3.eth.wait_for_transaction_receipt(tx_hash)
-                end_time = time.time()
-                blockchain_submitted = True
-            except Exception as exc:
-                st.error(f"Blockchain submission failed: {exc}")
+                    contract_txn = contract.functions.generateCertificate(
+                        certificate_id,
+                        uid,
+                        candidate_name,
+                        course_name,
+                        org_name,
+                        ipfs_hash
+                    ).build_transaction({
+                        'chainId': 11155111,
+                        'gas': gas_limit,
+                        'gasPrice': w3.eth.gas_price,
+                        'nonce': nonce,
+                    })
+
+                    signed_txn = w3.eth.account.sign_transaction(contract_txn, private_key=private_key)
+
+                    # web3.py versions differ in attribute naming for the signed raw bytes; normalize and convert hex->bytes if needed
+                    raw_tx = getattr(signed_txn, 'rawTransaction', None) or getattr(signed_txn, 'raw_transaction', None)
+                    if raw_tx is None:
+                        try:
+                            raw_tx = signed_txn.get('rawTransaction') or signed_txn.get('raw_transaction')
+                        except Exception:
+                            raw_tx = None
+
+                    # if string hex, convert to bytes
+                    if isinstance(raw_tx, str) and raw_tx.startswith('0x'):
+                        try:
+                            raw_tx = bytes.fromhex(raw_tx[2:])
+                        except Exception:
+                            pass
+
+                    if raw_tx is None:
+                        st.error('Signed transaction object missing raw transaction bytes; cannot submit to network.')
+                        raise RuntimeError('Signed transaction missing raw bytes')
+
+                    start_time = time.time()
+                    tx_hash = w3.eth.send_raw_transaction(raw_tx)
+                    receipt = w3.eth.wait_for_transaction_receipt(tx_hash)
+                    end_time = time.time()
+
+                    # check receipt status
+                    status = receipt.get('status') if isinstance(receipt, dict) else getattr(receipt, 'status', None)
+                    tx_hex = tx_hash.hex() if hasattr(tx_hash, 'hex') else str(tx_hash)
+                    if status is None:
+                        st.info(f"Transaction sent: {tx_hex}. Receipt available, status unknown.")
+                        blockchain_submitted = True
+                    elif int(status) == 1:
+                        st.success(f"Transaction mined successfully: {tx_hex} (block {receipt.get('blockNumber', 'N/A')})")
+                        blockchain_submitted = True
+                    else:
+                        st.error(f"Transaction reverted on-chain: {tx_hex}. Receipt: {receipt}")
+                except Exception as exc:
+                    st.error(f"Blockchain submission failed: {exc}")
 
         # --- Send the email after generating the PDF ---
         if student_email or verifier_email:
