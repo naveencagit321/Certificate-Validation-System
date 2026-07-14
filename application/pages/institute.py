@@ -86,12 +86,82 @@ def send_email_with_attachment(recipient_emails, subject, body, file_path):
         return False
 
 # Placeholder structural stubs to prevent pipeline dependencies from raising runtime exceptions
-def generate_certificate(pdf_path, uid, name, course, org, logo, cert_id):
-    with open(pdf_path, "w") as f:
-        f.write("Cryptographic Certificate Document Footprint Allocation Payload")
+def generate_certificate(pdf_path, uid, name, course, org, logo_path, cert_id):
+    """Generates a geometrically valid binary PDF layout artifact."""
+    try:
+        c = canvas.Canvas(pdf_path, pagesize=letter)
+        
+        # Draw background/borders
+        c.setLineWidth(5)
+        c.setStrokeColorRGB(0.1, 0.2, 0.4)
+        c.rect(20, 20, 572, 752)
+        
+        # Add institute logo if provided
+        if logo_path and os.path.exists(logo_path):
+            try:
+                c.drawImage(logo_path, 250, 650, width=100, height=50)
+            except Exception:
+                pass
+        
+        # Add valid typography elements
+        c.setFont("Helvetica-Bold", 28)
+        c.drawCentredString(306, 550, "CERTIFICATE OF COMPLETION")
+        
+        c.setFont("Helvetica", 16)
+        c.drawCentredString(306, 480, "This is proudly presented to")
+        
+        c.setFont("Helvetica-Bold", 22)
+        c.drawCentredString(306, 430, name)
+        
+        c.setFont("Helvetica", 14)
+        c.drawCentredString(306, 380, f"For successfully completing the course program:")
+        c.setFont("Helvetica-Oblique", 16)
+        c.drawCentredString(306, 350, course)
+        
+        c.setFont("Helvetica", 12)
+        c.drawCentredString(306, 280, f"Authorized by: {org}")
+        c.drawCentredString(306, 260, f"Student UID: {uid}")
+        
+        # Embed the verification footprint hash at the footer
+        c.setFont("Courier", 8)
+        c.setFillColorRGB(0.5, 0.5, 0.5)
+        c.drawCentredString(306, 50, f"Verification Ledger ID: {cert_id}")
+        
+        c.save()
+        print(f"Successfully compiled valid binary PDF metadata artifact to {pdf_path}")
+    except Exception as e:
+        st.error(f"Failed to compile valid PDF artifact layer: {e}")
 
 def view_certificate(cert_id):
-    st.write(f"Querying storage records for entry point tracking token parameters: {cert_id}")
+    """Queries the smart contract ledger to retrieve data for a target certificate ID."""
+    with st.spinner("Fetching certificate data from Ethereum Blockchain..."):
+        try:
+            # Check connection stability
+            if not getattr(w3, 'is_connected', None) or not w3.is_connected():
+                st.error("Connection Error: Web3 provider is offline.")
+                return
+
+            # Call the smart contract getter method natively
+            # Based on the contract return structure: (studentName, courseName, organization, ipfsHash)
+            cert_details = contract.functions.getCertificate(cert_id.strip()).call()
+
+            if cert_details and cert_details[0]:
+                st.success("### 🔐 Certificate Record Retrieved!")
+                
+                # Render information via a clean layout using the correct Solidity indices
+                st.markdown("#### **Verified Records:**")
+                st.markdown(f"* 🧑‍🎓 **Student Name:** {cert_details[0]}")
+                st.markdown(f"* 📚 **Course Program:** {cert_details[1]}")
+                st.markdown(f"* 🏢 **Issuing Authority:** {cert_details[2]}")
+                
+                # Provide a direct clickable button linking to the document hosted on IPFS
+                if cert_details[3]:
+                    ipfs_url = f"https://gateway.pinata.cloud/ipfs/{cert_details[3]}"
+                    st.markdown(f"[📄 View Original Certificate Document on IPFS]({ipfs_url})")
+            else:
+                st.error("Certificate not found on-chain.")
+        except Exception as e:
+            st.error(f"Error accessing contract parameters: {str(e)}")
 
 # Initialize cloud configurations
 api_key = os.getenv("PINATA_API_KEY", "")
