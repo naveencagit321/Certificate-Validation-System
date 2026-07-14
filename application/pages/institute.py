@@ -177,6 +177,23 @@ if selected == options[0]:
                 try:
                     account = w3.eth.account.from_key(private_key)
 
+                    # use pending nonce to avoid nonce collisions
+                    nonce = w3.eth.get_transaction_count(account.address, 'pending')
+
+                    # preflight simulation to catch reverts before sending
+                    try:
+                        contract.functions.generateCertificate(
+                            certificate_id,
+                            uid,
+                            candidate_name,
+                            course_name,
+                            org_name,
+                            ipfs_hash
+                        ).call({'from': account.address})
+                    except Exception as exc:
+                        st.error(f"Contract preflight simulation failed: {exc}")
+                        raise
+
                     # estimate gas if possible
                     try:
                         estimated_gas = contract.functions.generateCertificate(
@@ -188,11 +205,9 @@ if selected == options[0]:
                             ipfs_hash
                         ).estimate_gas({'from': account.address})
                         gas_limit = int(estimated_gas * 1.2)
-                    except Exception:
-                        gas_limit = 300000
-
-                    # use pending nonce to avoid nonce collisions
-                    nonce = w3.eth.get_transaction_count(account.address, 'pending')
+                    except Exception as exc:
+                        st.error(f"Gas estimation failed: {exc}")
+                        raise
 
                     contract_txn = contract.functions.generateCertificate(
                         certificate_id,
@@ -239,12 +254,12 @@ if selected == options[0]:
                     tx_hex = tx_hash.hex() if hasattr(tx_hash, 'hex') else str(tx_hash)
                     if status is None:
                         st.info(f"Transaction sent: {tx_hex}. Receipt available, status unknown.")
-                        blockchain_submitted = True
                     elif int(status) == 1:
                         st.success(f"Transaction mined successfully: {tx_hex} (block {receipt.get('blockNumber', 'N/A')})")
                         blockchain_submitted = True
                     else:
                         st.error(f"Transaction reverted on-chain: {tx_hex}. Receipt: {receipt}")
+                        blockchain_submitted = False
                 except Exception as exc:
                     st.error(f"Blockchain submission failed: {exc}")
 
