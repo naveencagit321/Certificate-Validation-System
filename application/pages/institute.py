@@ -72,13 +72,21 @@ def send_email_with_attachment(recipient_emails, subject, body, file_path):
     msg['Subject'] = subject
     msg.attach(MIMEText(body, 'plain'))
 
-    # Attach the file
-    with open(file_path, "rb") as attachment:
-        part = MIMEBase('application', 'octet-stream')
-        part.set_payload(attachment.read())
-    encoders.encode_base64(part)
-    part.add_header('Content-Disposition', f"attachment; filename= {os.path.basename(file_path)}")
-    msg.attach(part)
+    # Attach the file (robustly)
+    if not file_path or not os.path.exists(file_path):
+        st.error(f"Attachment not found: {file_path}")
+        return False
+
+    try:
+        with open(file_path, "rb") as attachment:
+            part = MIMEBase('application', 'octet-stream')
+            part.set_payload(attachment.read())
+        encoders.encode_base64(part)
+        part.add_header('Content-Disposition', f"attachment; filename= {os.path.basename(file_path)}")
+        msg.attach(part)
+    except Exception as e:
+        st.error(f"Failed to attach file for email: {e}")
+        return False
 
     try:
         # Connect to the SMTP server (example for Gmail)
@@ -88,8 +96,10 @@ def send_email_with_attachment(recipient_emails, subject, body, file_path):
         server.sendmail(sender_email, recipient_emails, msg.as_string())
         server.quit()
         st.success(f"Certificate successfully emailed to {', '.join(recipient_emails)}")
+        return True
     except Exception as e:
         st.error(f"Failed to send email. Error: {e}")
+        return False
 # ----------------------------------------------------
 
 options = ("Generate Certificate", "View Certificates")
@@ -212,8 +222,13 @@ if selected == options[0]:
         
         # -----------------------------------------------
 
-        # Clean up the generated PDF file after sending
-        os.remove(pdf_file_path)
+        # Clean up the generated PDF file after sending (best-effort)
+        try:
+            if os.path.exists(pdf_file_path):
+                os.remove(pdf_file_path)
+        except Exception as e:
+            # Do not crash the app if cleanup fails
+            st.warning(f"Could not remove temporary file {pdf_file_path}: {e}")
         with col2:
 
             st.success("Certificate successfully generated!")
