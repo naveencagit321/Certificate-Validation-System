@@ -2,7 +2,7 @@ import streamlit as st
 import cv2
 import os
 import numpy as np
-from connection import contract
+from connection import contract, w3
 from utils.streamlit_utils import hide_icons, hide_sidebar, remove_whitespaces
 
 # ─── STREAMLIT PAGE CONFIGURATION ───
@@ -92,15 +92,22 @@ if st.session_state.verification_mode == "QR Code Scanner":
             
             with st.spinner("Verifying authenticity with Ethereum ledger..."):
                 try:
+                    # sanity checks
+                    if not getattr(w3, 'is_connected', None) or not w3.is_connected():
+                        raise ConnectionError('Web3 provider is not connected. Check SEPOLIA_RPC_URL and network access.')
+                    if contract is None or not hasattr(contract, 'functions'):
+                        raise RuntimeError('Smart contract is not loaded properly (ABI or address missing).')
+
                     cert_details = contract.functions.getCertificate(data.strip()).call()
                     if cert_details and cert_details[0]:
                         st.success("### 🎉 Certificate Successfully Verified!")
                         st.balloons() # Decorative element for presentation impact
-                        
                         # Show key validation data elegantly instead of full JSON
                         st.markdown(f"**Student:** {cert_details[1]} | **Course:** {cert_details[2]}")
+                    else:
+                        st.error('Certificate not found on-chain.')
                 except Exception as e:
-                    st.error("Verification failed on network.")
+                    st.error(f"Verification failed on network: {e}")
 
 # MODULE 2: FILE UPLOAD SEGMENTATION WORKSPACE
 elif st.session_state.verification_mode == "Upload PDF":
@@ -121,20 +128,27 @@ elif st.session_state.verification_mode == "Manual ID Lookup":
         if cert_id.strip():
             with st.spinner("Querying Ethereum Blockchain smart contract ledger..."):
                 try:
+                    if not getattr(w3, 'is_connected', None) or not w3.is_connected():
+                        raise ConnectionError('Web3 provider is not connected. Check SEPOLIA_RPC_URL and network access.')
+                    if contract is None or not hasattr(contract, 'functions'):
+                        raise RuntimeError('Smart contract is not loaded properly (ABI or address missing).')
+
                     # Calls the smart contract getter method natively
                     cert_details = contract.functions.getCertificate(cert_id.strip()).call()
-                    
+
                     if cert_details and cert_details[0]:
                         # ─── 🎉 POPUP HOOK FOR SUCCESSFUL MANUAL LOOKUP ───
                         st.toast("🔐 Cryptographic Signature Matched!", icon="🛡️")
                         st.success("### 🎉 Certificate Successfully Verified!")
                         st.balloons()
-                        
+
                         # Render information via a clean bulleted layout instead of raw JSON parameters
                         st.markdown("#### **Verified Records:**")
                         st.markdown(f"* 🧑‍🎓 **Student Name:** {cert_details[1]}") # Swapped indices to show actual string match values
                         st.markdown(f"* 📚 **Course Program:** {cert_details[2]}")
                         st.markdown(f"* 🏢 **Issuing Authority:** {cert_details[3]}")
+                    else:
+                        st.error('Certificate not found on-chain.')
                 except Exception as e:
                     st.error(f"Error accessing contract parameters: {str(e)}")
         else:
