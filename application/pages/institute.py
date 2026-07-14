@@ -147,31 +147,40 @@ if selected == options[0]:
         
 
         # Smart Contract Call
-    # 1. Build the transaction dictionary
-        contract_txn = contract.functions.generateCertificate(
-            certificate_id, 
-            uid, 
-            candidate_name, 
-            course_name, 
-            org_name, 
-            ipfs_hash
-        ).build_transaction({
-            'chainId': 11155111,                  # Sepolia's official Chain ID
-            'gas': 300000,
-            'gasPrice': w3.eth.gas_price,
-            'nonce': w3.eth.get_transaction_count(w3.eth.account.from_key(os.getenv("PRIVATE_KEY")).address),
-        })
+        private_key = os.getenv("PRIVATE_KEY")
+        blockchain_submitted = False
+        receipt = None
+        tx_hash = None
+        start_time = None
+        end_time = None
 
-        # 2. Sign the transaction securely using your private key from the .env file
-        signed_txn = w3.eth.account.sign_transaction(contract_txn, private_key=os.getenv("PRIVATE_KEY"))
+        if not private_key:
+            st.warning("PRIVATE_KEY is not configured. The certificate was created locally but was not submitted to the blockchain.")
+        else:
+            try:
+                account = w3.eth.account.from_key(private_key)
+                contract_txn = contract.functions.generateCertificate(
+                    certificate_id,
+                    uid,
+                    candidate_name,
+                    course_name,
+                    org_name,
+                    ipfs_hash
+                ).build_transaction({
+                    'chainId': 11155111,
+                    'gas': 300000,
+                    'gasPrice': w3.eth.gas_price,
+                    'nonce': w3.eth.get_transaction_count(account.address),
+                })
 
-        # 3. Send the raw signed transaction to Sepolia
-        start_time = time.time()
-        tx_hash = w3.eth.send_raw_transaction(signed_txn.rawTransaction)
-
-        # 4. Wait for it to clear on the blockchain
-        receipt = w3.eth.wait_for_transaction_receipt(tx_hash)
-        end_time = time.time()
+                signed_txn = w3.eth.account.sign_transaction(contract_txn, private_key=private_key)
+                start_time = time.time()
+                tx_hash = w3.eth.send_raw_transaction(signed_txn.rawTransaction)
+                receipt = w3.eth.wait_for_transaction_receipt(tx_hash)
+                end_time = time.time()
+                blockchain_submitted = True
+            except Exception as exc:
+                st.error(f"Blockchain submission failed: {exc}")
 
         # --- Send the email after generating the PDF ---
         if student_email or verifier_email:
@@ -213,13 +222,18 @@ if selected == options[0]:
             os.remove("certificate_qr.png")
 
             # Display gas and execution time
-            execution_time = end_time - start_time
-            gas_used = receipt['gasUsed']
-
-            df = pd.DataFrame({
-                "Particulars": ["Execution Time (seconds)", "Gas Used"],
-                "Value": [f"{execution_time:.4f}", gas_used]
-            })
+            if blockchain_submitted and start_time is not None and end_time is not None and receipt is not None:
+                execution_time = end_time - start_time
+                gas_used = receipt.get('gasUsed', 'N/A')
+                df = pd.DataFrame({
+                    "Particulars": ["Execution Time (seconds)", "Gas Used"],
+                    "Value": [f"{execution_time:.4f}", gas_used]
+                })
+            else:
+                df = pd.DataFrame({
+                    "Particulars": ["Execution Time (seconds)", "Gas Used"],
+                    "Value": ["N/A", "N/A"]
+                })
 
             st.dataframe(df, hide_index=True)
 
