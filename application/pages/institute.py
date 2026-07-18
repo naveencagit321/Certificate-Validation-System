@@ -18,6 +18,12 @@ from email.mime.base import MIMEBase
 from email.encoders import encode_base64
 from connection import contract, w3  # Web3 and contract instance imports
 
+with st.sidebar:
+    st.markdown("---")
+    if st.button("Home", use_container_width=False):  
+        st.switch_page("app.py")
+    st.markdown("---")
+
 # Dynamic Root Directory Path Tracking
 ROOT_DIR = Path(__file__).resolve().parent.parent.parent
 
