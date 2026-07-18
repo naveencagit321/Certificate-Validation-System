@@ -17,12 +17,34 @@ from email.mime.text import MIMEText
 from email.mime.base import MIMEBase
 from email.encoders import encode_base64
 from connection import contract, w3  # Web3 and contract instance imports
+from utils.streamlit_utils import hide_icons, hide_sidebar, remove_whitespaces
 
-with st.sidebar:
-    st.markdown("---")
-    if st.button("Home", use_container_width=False):  
-        st.switch_page("app.py")
-    st.markdown("---")
+# ─── STREAMLIT PAGE CONFIGURATION ───
+st.set_page_config(layout="wide", initial_sidebar_state="collapsed")
+hide_icons()
+hide_sidebar()
+remove_whitespaces()
+
+# ─── ELIMINATE SIDEBAR INFRASTRUCTURE ───
+st.markdown(
+    """
+    <style>
+        [data-testid="stSidebarCollapseButton"] {
+            display: none !important;
+            visibility: hidden !important;
+        }
+        section[data-testid="stSidebar"] {
+            display: none !important;
+            width: 0px !important;
+        }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
+
+# ─── TOP-LEFT INLINE NAVIGATION HEADER ───
+if st.button("Home", key="nav_home_verifier_btn"):
+    st.switch_page("app.py")
 
 # Dynamic Root Directory Path Tracking
 ROOT_DIR = Path(__file__).resolve().parent.parent.parent
